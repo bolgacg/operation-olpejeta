@@ -40,7 +40,7 @@ canvas{width:100%;image-rendering:pixelated;display:block;border:2px solid var(-
 #objectives{font-family:var(--pixel);font-size:9px;color:var(--sanddark)}
 #briefing,#science,#complete{position:absolute;inset:0;background:rgba(40,34,20,.55);display:none;z-index:5}
 #briefing.show,#science.show,#complete.show{display:flex;align-items:center;justify-content:center}
-#briefing .card,#science .card,#complete .card{max-width:520px;margin:12px;background:#fffef5;border:3px solid var(--sanddark);
+#briefing .card,#science .card,#complete .card,#debrief .card,.overlay .card{max-width:520px;margin:12px;background:#fffef5;border:3px solid var(--sanddark);
   border-radius:6px;padding:18px 20px;font-size:13.5px;line-height:1.6}
 .bt{font-family:var(--pixel);font-size:11px;color:var(--sanddark);margin-bottom:10px}
 #briefing ol{margin:8px 0 14px 18px}
@@ -50,6 +50,36 @@ canvas{width:100%;image-rendering:pixelated;display:block;border:2px solid var(-
   border:none;border-radius:4px;cursor:pointer}
 .quote{font-family:var(--serif);font-style:italic;color:var(--soft);border-left:3px solid var(--neg);padding-left:12px;margin-bottom:10px}
 .cite{font-size:11.5px;color:var(--faint);margin-bottom:12px}
+.overlay,#briefing,#science,#complete{position:absolute;inset:0;background:rgba(40,34,20,.55);display:none;z-index:5}
+.overlay.show{display:flex;align-items:center;justify-content:center}
+.overlay-fixed{position:absolute;inset:0;background:rgba(40,34,20,.55);display:none;z-index:6}
+.overlay-fixed.show{display:flex;align-items:center;justify-content:center}
+#h-clock{font-family:var(--pixel);font-size:11px;color:var(--sanddark)}
+#l2-panel{display:none;margin-top:12px}
+#l2-panel.show{display:block}
+.l2-head{font-family:var(--pixel);font-size:10px;color:var(--sanddark);margin-bottom:8px}
+#deck{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.mcard{background:#fffef5;border:2px solid var(--sanddark);border-radius:4px;padding:10px 12px;font-size:12.5px}
+.mcard.active{border-color:var(--accent)}
+.mcard.done{opacity:.55}
+.mcard .mid{font-family:var(--pixel);font-size:8px;color:var(--faint);margin-bottom:4px}
+.mcard p{color:var(--soft);font-size:11.5px;margin:4px 0 8px}
+.mcard .assign button{font-family:var(--pixel);font-size:8px;padding:6px 8px;margin:0 4px 4px 0;background:var(--sanddark);color:#fffef5;border:none;border-radius:3px;cursor:pointer}
+.mcard .assign .clr{background:var(--amber)}
+.pend{font-family:var(--pixel);font-size:8px;color:var(--amber)}
+.okd{font-family:var(--pixel);font-size:8px;color:var(--pos)}
+.ref{font-family:var(--pixel);font-size:9px;color:#fff;background:var(--neg);display:inline-block;padding:3px 8px;border-radius:3px;margin:4px 0}
+.frow{font-size:11px;color:var(--soft);margin:3px 0}
+.frow b{color:var(--neg)}
+.prog-btn{font-family:var(--mono);font-size:10px;background:none;border:1px solid var(--rule2);border-radius:3px;padding:3px 7px;cursor:pointer;color:var(--soft);margin-top:4px}
+.prog{font-family:var(--mono);font-size:10.5px;background:#262114;color:#e8dfc8;padding:8px 10px;border-radius:4px;margin-top:6px;overflow-x:auto}
+#desk-btn{font-family:var(--pixel);font-size:10px;padding:10px 14px;background:var(--sanddark);color:#fffef5;border:none;border-radius:4px;cursor:pointer;margin-right:8px}
+.dtable{width:100%;border-collapse:collapse;font-size:12.5px;margin:8px 0}
+.dtable th{font-family:var(--pixel);font-size:8px;text-align:right;padding:4px;color:var(--faint)}
+.dtable td{padding:4px;border-bottom:1px solid var(--rule);text-align:right}
+.dtable td:first-child{text-align:left;color:var(--soft)}
+.dtable .tot td{font-family:var(--pixel);font-size:10px;border-top:2px solid var(--sanddark);border-bottom:none}
+.delta{font-family:var(--pixel);font-size:13px;color:var(--accent);margin:8px 0}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(9px)}}
 .lede{color:var(--soft);max-width:800px;margin-bottom:18px}
 footer{border-top:1px solid var(--rule);margin-top:40px;padding:20px 0 40px;font-family:var(--mono);font-size:12px;color:var(--faint)}
@@ -79,11 +109,21 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
         <span>DISTURBED <b id="h-dist">0</b></span>
         <span>MINI 4 PRO <b id="h-batt">100%</b></span>
         <span id="objectives">▢ GIRAFFES &nbsp;▢ ZEBRAS &nbsp;▢ HOME SAFE</span>
+        <span id="h-clock" style="display:none">09:00</span>
         <button id="science-btn">📄 THE SCIENCE</button>
       </div>
       <canvas id="game"></canvas>
       <div id="opsy"></div>
       <div id="tut-arrow">👇</div>
+      <div id="debrief" class="overlay-fixed">
+        <div class="card" style="max-width:560px">
+          <div class="bt">SHIFT DEBRIEF — 17:00</div>
+          <table id="debrief-table" class="dtable"></table>
+          <div id="debrief-delta" class="delta"></div>
+          <p id="debrief-note" style="font-size:12px;color:var(--soft)"></p>
+          <button class="close-btn">CLOSE</button>
+        </div>
+      </div>
       <button id="sound-btn">🔊 TAP FOR SOUND</button>
       <div id="briefing">
         <div class="card">
@@ -120,22 +160,29 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
         <div class="card">
           <div class="bt">LEVEL 1 COMPLETE — 09:00</div>
           <p id="complete-lines"></p>
-          <p>The clipboard is yours now, coordinator. <b>Level 2: the operations desk</b> — where
-          missions must be certified before they fly — is in construction on this page.</p>
-          <button class="close-btn">KEEP FLYING</button>
+          <p>The clipboard is yours now, coordinator. <b>Level 2: the operations desk.</b> Three
+          aircraft, a queue of requests, and a pre-flight gate that only speaks in rules.</p>
+          <button id="desk-btn">▶ TAKE THE DESK (09:00)</button>
+          <button class="close-btn" style="background:#fffef5;color:var(--sanddark);border:2px solid var(--sanddark)">keep flying</button>
         </div>
       </div>
     </div>
-    <p class="lede" style="margin-top:14px;font-size:13.5px">Drag a line from the drone to fly it. Sound on
-    is worth it: OPSY, your operations assistant, has opinions.</p>
+    <div id="l2-panel">
+      <div class="l2-head">THE OPERATIONS DESK · requests arrive on their own schedule</div>
+      <div id="deck"></div>
+    </div>
+    <p class="lede" style="margin-top:14px;font-size:13.5px">Level 1: drag a line from the drone to fly it.
+    Level 2: assign aircraft to requests and let the gate judge your plans. Sound on is worth it: OPSY,
+    your operations assistant, has opinions.</p>
   </div>
 </section>
 
 <section>
   <div class="wrap">
-    <div class="placeholder">Level 2 (the operations desk: pre-flight certification, shared airspace,
-    the autonomy debrief), the paper provenance section and the guided tour are being built onto this
-    page. What is playable above is Level 1's core.</div>
+    <div class="placeholder">Level 1 is the pilot's seat; Level 2 is the operations desk — finish the
+    morning assignment and press ▶ TAKE THE DESK. Every refusal the pre-flight gate issues cites the
+    study it comes from, and at 17:00 your shift is scored against an autonomy layer running the same
+    deck under the same rules.</div>
   </div>
 </section>
 
