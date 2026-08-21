@@ -48,6 +48,14 @@ You are the NEW OPERATIONS COORDINATOR at an Ol Pejeta-like conservancy. One acc
 | 8-bit safari art | the approved look | style B decision; charm without the tacticool trap |
 | Editorial page frame + provenance + limitations | the shell around the canvas | committee-safe if forwarded; house doctrine; where pop-up papers get full citations |
 
+## Science-grounded mechanics (added 22 Aug from the Ecology & Evolution 2026 noise paper)
+The in-game science card quotes the REAL paper (Afridi et al., incl. Schultz Lundquist, field
+site = Ol Pejeta itself): altitude bands drive disturbance (below 40 m = sustained vigilance
+and relocation), and "greater disturbance during dual-drone operations and in mixed-species
+assemblages". Level 2 inherits two rules from this: DUAL-DRONE PENALTY (two aircraft near one
+herd multiplies disturbance) and MIXED-HERD BUFFERS (larger circles where species mix). Every
+future nature rule follows this pattern: quote first, mechanic second.
+
 ## Scope fence (the timebox, directive 14)
 IN: everything above. OUT (explicitly): multiplayer, save games, mobile touch polish beyond
 basics, terrain generation (one hand-built map), more than 3 flyable drones, more than ~6

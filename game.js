@@ -34,18 +34,31 @@ const snd={
   score:()=>{beep(660,.05,'sine',.05);setTimeout(()=>beep(880,.07,'sine',.05),60);},
 };
 
+/* ---------- sound priming (iOS needs a user gesture for TTS + audio) ---------- */
+let SOUND=false;
+function primeSound(){
+  SOUND=true;
+  try{ AC.resume(); }catch(e){}
+  try{
+    const u=new SpeechSynthesisUtterance(' '); u.volume=0; speechSynthesis.speak(u);
+  }catch(e){}
+  const b=document.getElementById('sound-btn'); if(b) b.style.display='none';
+}
+document.getElementById('sound-btn').addEventListener('click',()=>{ primeSound(); opsy(lastOpsy||'Sound on. I have been talking this whole time, you know.'); });
+
 /* ---------- OPSY ---------- */
 const opsyEl=document.getElementById('opsy');
-let opsyTimer=null;
+let opsyTimer=null, lastOpsy='';
 function opsy(text, speak=true){
+  lastOpsy=text;
   opsyEl.textContent='OPSY: '+text;
   opsyEl.classList.add('show');
-  clearTimeout(opsyTimer); opsyTimer=setTimeout(()=>opsyEl.classList.remove('show'), 5200);
-  if(speak && 'speechSynthesis' in window){
+  clearTimeout(opsyTimer); opsyTimer=setTimeout(()=>opsyEl.classList.remove('show'), 6500);
+  if(speak && SOUND && 'speechSynthesis' in window){
     try{
       speechSynthesis.cancel();
       const u=new SpeechSynthesisUtterance(text);
-      u.rate=1.15; u.pitch=1.6; u.volume=.9;
+      u.rate=1.12; u.pitch=1.6; u.volume=.9;
       speechSynthesis.speak(u);
     }catch(e){}
   }
@@ -73,6 +86,23 @@ const herds=[
 ];
 const rhino={x:33*TS,y:4*TS};
 let score=0, photos=0, disturbs=0, lost=0;
+let started=false, complete=false, scienceShown=false;
+const objectives={giraffe:false, zebra:false, home:false};
+function objHud(){
+  document.getElementById('objectives').textContent=
+    (objectives.giraffe?'☑':'▢')+' GIRAFFES  '+(objectives.zebra?'☑':'▢')+' ZEBRAS  '+(objectives.home?'☑':'▢')+' HOME SAFE';
+}
+function checkComplete(){
+  if(complete) return;
+  if(objectives.giraffe && objectives.zebra && objectives.home){
+    complete=true; snd.score(); snd.land();
+    document.getElementById('complete-lines').innerHTML=
+      'Shift score <b>'+Math.max(0,score)+'</b> · photos '+photos+' · animals disturbed '+disturbs+
+      (disturbs===0?' — a perfect conservation record.':' — the herds request quieter mornings.');
+    document.getElementById('complete').classList.add('show');
+    opsy(disturbs===0?'Flawless morning, coordinator. Not one animal looked up. I am telling the professor.':'Assignment complete. Next time we try it without frightening the locals.');
+  }
+}
 let mission={type:'photo', target:0, dwell:0, done:false};
 
 /* ---------- input: draw path ---------- */
@@ -83,6 +113,7 @@ function evPos(e){
   return {x:(p.clientX-r.left)/r.width*cvs.width, y:(p.clientY-r.top)/r.height*cvs.height};
 }
 cvs.addEventListener('pointerdown',e=>{
+  if(!started) return;
   const p=evPos(e);
   for(const d of drones){
     if(Math.hypot(d.x-p.x,d.y-p.y)<16){ drawing=d; d.path=[]; if(AC.state==='suspended')AC.resume(); break; }
@@ -106,7 +137,7 @@ const tut={
   step:0,
   steps:[
     {key:'start',  go(){ opsy('Good morning, coordinator! Drag a line from your drone to fly it.'); arrowAt(camp.x,camp.y-8);} },
-    {key:'takeoff',go(){ opsy('Airborne! Photograph the giraffes. Stay OUTSIDE their circle, they have sensitive ears.'); arrowAt(herds[0].x,herds[0].y-14);} },
+    {key:'takeoff',go(){ opsy('Airborne! Fly into the GREEN ring around the giraffes and hold steady. The camera fires itself. Never cross the RED circle.'); arrowAt(herds[0].x,herds[0].y-14);} },
     {key:'photo',  go(){ opsy('Beautiful shot! Now bring it home before the battery runs out.'); arrowAt(camp.x,camp.y-8);} },
     {key:'landed', go(){ opsy('Textbook landing. This is the whole job: fly, observe, disturb nothing, come home.'); arrowOff();} },
   ],
@@ -139,6 +170,7 @@ function update(dt){
       if(!d.path.length && Math.hypot(d.x-camp.x,d.y-camp.y)<14){
         d.state='home'; snd.land(); d.warned=false;
         score+=Math.round(d.batt*2); updateHud();
+        if(d.batt>=20 && (photos>0)){ objectives.home=true; objHud(); checkComplete(); }
         tut.fire('landed');
       }
       // herd interactions
@@ -150,13 +182,19 @@ function update(dt){
           const a=Math.atan2(h.y-d.y,h.x-d.x); h.vx=Math.cos(a)*22; h.vy=Math.sin(a)*22;
           updateHud();
         } else if(dist<h.photo && dist>=h.buffer && h.scattered<=0 && d.state==='fly'){
-          mission.dwell+=dt;
-          if(mission.dwell>0.9 && !h.shot){
-            h.shot=true; photos++; score+=800; snd.shutter(); snd.score(); flash=0.25; updateHud();
-            if(hi===0) tut.fire('photo');
-            else opsy('Zebra portfolio complete! National Geographic is on hold.');
+          if(!scienceShown && !h.shot){
+            scienceShown=true;
+            document.getElementById('science').classList.add('show');
+            opsy('Hold on. Before you go closer, read why that red circle is there. Real research, real zebras, this exact conservancy.');
           }
-        }
+          h.dwell=(h.dwell||0)+dt;
+          if(h.dwell>1.1 && !h.shot){
+            h.shot=true; photos++; score+=800; snd.shutter(); snd.score(); flash=0.25;
+            if(h.kind==='giraffe'){ objectives.giraffe=true; tut.fire('photo'); }
+            if(h.kind==='zebra'){ objectives.zebra=true; opsy('Zebra portfolio complete! The very herd from the noise study, by the way.'); }
+            objHud(); updateHud(); checkComplete();
+          }
+        } else { h.dwell=0; }
       }
     }
     // recharge at home
@@ -186,8 +224,16 @@ function render(){
   spr('rhino',rhino.x,rhino.y);
   // herds with buffers
   for(const h of herds){
-    ctx.strokeStyle='rgba(176,58,58,0.55)'; ctx.setLineDash([4,3]); ctx.lineWidth=1;
+    if(!h.shot){
+      ctx.strokeStyle='rgba(47,125,84,0.5)'; ctx.setLineDash([6,4]); ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.arc(h.x,h.y,h.photo,0,7); ctx.stroke();
+    }
+    ctx.strokeStyle='rgba(176,58,58,0.6)'; ctx.setLineDash([4,3]); ctx.lineWidth=1.2;
     ctx.beginPath(); ctx.arc(h.x,h.y,h.buffer,0,7); ctx.stroke(); ctx.setLineDash([]);
+    if(h.dwell>0 && !h.shot){
+      ctx.strokeStyle='#2f7d54'; ctx.lineWidth=2.5;
+      ctx.beginPath(); ctx.arc(h.x,h.y,h.photo+5,-Math.PI/2,-Math.PI/2+(h.dwell/1.1)*6.283); ctx.stroke();
+    }
     for(let k=0;k<h.n;k++){
       const a=k/h.n*6.28+(h.kind==='zebra'?1:0);
       spr(h.kind, h.x+Math.cos(a)*13*(1+(k%2)*0.5), h.y+Math.sin(a)*10*(1+(k%3)*0.4));
@@ -231,7 +277,19 @@ function loop(now){
   update(dt); render();
   requestAnimationFrame(loop);
 }
-updateHud();
-setTimeout(()=>{ tut.steps[0].go(); }, 800);
+updateHud(); objHud();
+document.getElementById('briefing').classList.add('show');
+document.getElementById('begin-btn').addEventListener('click',()=>{
+  primeSound();
+  document.getElementById('briefing').classList.remove('show');
+  started=true;
+  setTimeout(()=>tut.steps[0].go(), 300);
+});
+document.getElementById('science-btn').addEventListener('click',()=>{
+  document.getElementById('science').classList.add('show');
+});
+for(const b of document.querySelectorAll('.close-btn')) b.addEventListener('click',e=>{
+  e.target.closest('#science, #complete').classList.remove('show');
+});
 requestAnimationFrame(loop);
 })();

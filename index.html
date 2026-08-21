@@ -33,6 +33,23 @@ canvas{width:100%;image-rendering:pixelated;display:block;border:2px solid var(-
 #opsy.show{opacity:1}
 #tut-arrow{position:absolute;font-size:30px;opacity:0;transition:opacity .3s;pointer-events:none;animation:bob 0.8s ease-in-out infinite}
 #tut-arrow.show{opacity:1}
+#sound-btn{position:absolute;right:14px;top:52px;font-family:var(--pixel);font-size:9px;padding:8px 10px;
+  background:#fffef5;border:2px solid var(--sanddark);border-radius:4px;color:var(--sanddark);cursor:pointer;display:none}
+#science-btn{font-family:var(--pixel);font-size:8px;padding:5px 8px;background:#fffef5;border:2px solid var(--sanddark);
+  border-radius:4px;color:var(--sanddark);cursor:pointer;margin-left:auto}
+#objectives{font-family:var(--pixel);font-size:9px;color:var(--sanddark)}
+#briefing,#science,#complete{position:absolute;inset:0;background:rgba(40,34,20,.55);display:none;z-index:5}
+#briefing.show,#science.show,#complete.show{display:flex;align-items:center;justify-content:center}
+#briefing .card,#science .card,#complete .card{max-width:520px;margin:12px;background:#fffef5;border:3px solid var(--sanddark);
+  border-radius:6px;padding:18px 20px;font-size:13.5px;line-height:1.6}
+.bt{font-family:var(--pixel);font-size:11px;color:var(--sanddark);margin-bottom:10px}
+#briefing ol{margin:8px 0 14px 18px}
+#briefing li{margin-bottom:7px}
+#briefing .green{color:var(--pos);font-weight:600}
+#begin-btn,.close-btn{font-family:var(--pixel);font-size:10px;padding:10px 14px;background:var(--sanddark);color:#fffef5;
+  border:none;border-radius:4px;cursor:pointer}
+.quote{font-family:var(--serif);font-style:italic;color:var(--soft);border-left:3px solid var(--neg);padding-left:12px;margin-bottom:10px}
+.cite{font-size:11.5px;color:var(--faint);margin-bottom:12px}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(9px)}}
 .lede{color:var(--soft);max-width:800px;margin-bottom:18px}
 footer{border-top:1px solid var(--rule);margin-top:40px;padding:20px 0 40px;font-family:var(--mono);font-size:12px;color:var(--faint)}
@@ -61,10 +78,53 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
         <span>PHOTOS <b id="h-photos">0</b></span>
         <span>DISTURBED <b id="h-dist">0</b></span>
         <span>MINI 4 PRO <b id="h-batt">100%</b></span>
+        <span id="objectives">▢ GIRAFFES &nbsp;▢ ZEBRAS &nbsp;▢ HOME SAFE</span>
+        <button id="science-btn">📄 THE SCIENCE</button>
       </div>
       <canvas id="game"></canvas>
       <div id="opsy"></div>
       <div id="tut-arrow">👇</div>
+      <button id="sound-btn">🔊 TAP FOR SOUND</button>
+      <div id="briefing">
+        <div class="card">
+          <div class="bt">MORNING ASSIGNMENT</div>
+          <p>Good morning, coordinator. Three rules before the rotors turn:</p>
+          <ol>
+            <li>Photograph the <b>giraffe herd</b> and the <b>zebra herd</b>. Fly into the
+              <span class="green">green ring</span> and hold steady; the camera fires itself.</li>
+            <li><b>Never cross a red circle.</b> Drone noise disturbs the animals; the closer you
+              fly, the worse it gets. The science is on this page, one tap away.</li>
+            <li>Bring the drone <b>home to the pad</b> before the battery dies. You have one
+              aircraft and the accountant knows its price.</li>
+          </ol>
+          <button id="begin-btn">▶ BEGIN SHIFT (sound on)</button>
+        </div>
+      </div>
+      <div id="science">
+        <div class="card">
+          <div class="bt">WHY THE RED CIRCLE EXISTS</div>
+          <p class="quote">"Higher altitudes corresponded to only brief vigilance by multiple
+          individuals&hellip; at the lowest altitudes (below 40 m), sustained vigilance and
+          short-distance relocation were more common."</p>
+          <p class="quote">"Behavioral responses appeared to vary with flight altitude and group
+          composition, with greater disturbance recorded during dual-drone operations and in
+          mixed-species assemblages."</p>
+          <p class="cite">Afridi, Laporte-Devylder, Maalouf, &hellip;, Schultz Lundquist et al.,
+          "Wildlife Responses to Drone Noise: A Preliminary Approach for Quantifying Disturbance",
+          <i>Ecology and Evolution</i>, 2026. Field site: Ol Pejeta Conservancy — the same zebras
+          you are photographing.</p>
+          <button class="close-btn">GOT IT</button>
+        </div>
+      </div>
+      <div id="complete">
+        <div class="card">
+          <div class="bt">LEVEL 1 COMPLETE — 09:00</div>
+          <p id="complete-lines"></p>
+          <p>The clipboard is yours now, coordinator. <b>Level 2: the operations desk</b> — where
+          missions must be certified before they fly — is in construction on this page.</p>
+          <button class="close-btn">KEEP FLYING</button>
+        </div>
+      </div>
     </div>
     <p class="lede" style="margin-top:14px;font-size:13.5px">Drag a line from the drone to fly it. Sound on
     is worth it: OPSY, your operations assistant, has opinions.</p>
