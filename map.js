@@ -11,6 +11,8 @@ window.MAP = (function(){
   // dirt track: camp to north gate, with a bend
   for(let j=6;j<24;j++) t[j][10]=3;
   for(let i=10;i<30;i++) t[6][i]=3;
+  // the Ewaso — the real campaign flew only west of the river
+  for(let j=6;j<H;j++){ t[j][38]=2; t[j][37+(j%5===0?1:0)]=2; }
   // trees/bushes decorations [x,y,kind]
   const deco=[[5,4,'acacia'],[9,6,'acacia'],[26,15,'acacia'],[31,17,'acacia'],[16,9,'acacia'],
               [33,3,'acacia'],[36,5,'bush'],[13,5,'bush'],[22,20,'bush'],[7,12,'bush'],

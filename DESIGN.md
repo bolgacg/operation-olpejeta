@@ -98,3 +98,36 @@ One SHIFT SCORE, identical rules for human and bot, same seeded mission deck and
 DEBRIEF SCREEN: two columns (YOU / AUTONOMY LAYER), row per component, identical totals
 formula, headline "Autonomy delta: +X%". Seeded => reproducible => honest. The bot is the
 same planner the gate uses, run continuously; this is stated on screen.
+
+## BUILD STATUS (21 Aug, late)
+- Level 1 LIVE with all five playtest fixes.
+- Level 2 LIVE (commit 83b00a4): shift clock 09:00->17:00 (~6 real minutes), six-mission deck
+  arriving on schedule, five-rule pre-flight gate (energy reserve / wildlife buffers / thermal
+  payload / controlled airspace / deconfliction) with plain-language refusals + paper pop-ups,
+  tower clearance with 18s delay, 12:00->14:30 wind window (northern legs ~2x battery), road
+  CORRIDOR routing (straight diagonals would permanently clip the mixed herd; routes follow the
+  dirt track, shown in the "view plan as program" DSL as `corridor east_track`), dual-drone +
+  mixed-herd disturbance rules, 17:00 debrief with YOU vs AUTONOMY LAYER table + AUTONOMY DELTA %.
+- Passability PROVEN numerically: every mission has >=1 certifiable plan at rest; OP-05 is
+  correctly refused on energy during the wind window and passes after it lifts (the drama beat).
+- Herds drift home after scatters (prevents corridor soft-lock).
+- Test params (dev only): ?l2=1 boots straight into L2, &t=HH.H jumps the clock, &sim=refuse|fly|debrief.
+- REMAINING (optional polish): energy-paper first-page image in its pop-up, provenance/tour
+  section, promotion cutscene. CV/ML soft-reference lines still awaiting Bo approval.
+
+## BUILD STATUS 2 (22 Aug, Bo's live playtest round)
+- FIXED from Bo's round-2 feedback: TTS voice forced en-US (was Danish system voice, pitch 1.6 → 1.0);
+  L1 crash overlay + TRY AGAIN; battery bar over flying drones; rhino = bonus photo target (+400);
+  ↺ RESTART in HUD; pixel tut-arrow (emoji replaced, gamebox-relative coords, hides on touch,
+  walkthrough-only); KEEP FLYING removed (softlocked L1).
+- Teaching layer: fleet briefing card between L1 and the desk (roles + real specs 43min/34min/249g),
+  role labels on assign buttons, "OPSY suggests" per mission, "→ Fix:" line under every refusal.
+- ROUTE CHOICE (answer to "why train if paths auto-draw"): NE requests toggle CORRIDOR vs DIRECT;
+  direct is shorter but refused when it cuts a buffer — L1's red-circle lesson becomes the desk decision.
+- Herd wander now bounded ±4px around home (was integrating drift onto the corridor).
+- Scoring fixed per Bo: shift score = L2 points only (L1 no longer leaks in), battery worth 1/pct
+  (tiebreaker), missions dominate.
+- Real-fieldwork sprinkles (all grounded in Maalouf et al. ICUAS 2025, Lundquist co-author):
+  Ewaso river on map + west-of-river rule, PAPERS.airspace card with DIRECT QUOTE (tourist aircraft /
+  two airstrips / military airport), airband+military ATC in clearance grant, Route 1/Route 2 in wind
+  advisory, rth_failsafe in program view. NO NE camp claim in the paper — river rule used instead.

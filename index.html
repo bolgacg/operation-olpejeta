@@ -31,16 +31,19 @@ canvas{width:100%;image-rendering:pixelated;display:block;border:2px solid var(-
 #opsy{position:absolute;left:14px;bottom:16px;max-width:70%;background:#fffef5;border:2px solid var(--sanddark);border-radius:4px;
   padding:8px 12px;font-family:var(--pixel);font-size:9px;line-height:1.7;color:var(--sanddark);opacity:0;transition:opacity .25s;pointer-events:none}
 #opsy.show{opacity:1}
-#tut-arrow{position:absolute;font-size:30px;opacity:0;transition:opacity .3s;pointer-events:none;animation:bob 0.8s ease-in-out infinite}
+#tut-arrow{position:absolute;width:20px;height:34px;opacity:0;transition:opacity .3s;pointer-events:none;animation:bob 0.8s ease-in-out infinite;z-index:4}
 #tut-arrow.show{opacity:1}
+#tut-arrow .tut-shaft{width:8px;height:16px;margin:0 auto;background:var(--amber);border:2px solid var(--sanddark);border-bottom:none}
+#tut-arrow .tut-head{width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-top:16px solid var(--amber);margin-left:-2px;filter:drop-shadow(0 2px 0 var(--sanddark))}
 #sound-btn{position:absolute;right:14px;top:52px;font-family:var(--pixel);font-size:9px;padding:8px 10px;
   background:#fffef5;border:2px solid var(--sanddark);border-radius:4px;color:var(--sanddark);cursor:pointer;display:none}
+#restart-btn{font-family:var(--pixel);font-size:8px;padding:5px 8px;background:#fffef5;border:2px solid var(--sanddark);border-radius:3px;cursor:pointer;color:var(--sanddark);margin-left:6px;white-space:nowrap}
 #science-btn{font-family:var(--pixel);font-size:8px;padding:5px 8px;background:#fffef5;border:2px solid var(--sanddark);
   border-radius:4px;color:var(--sanddark);cursor:pointer;margin-left:auto}
 #objectives{font-family:var(--pixel);font-size:9px;color:var(--sanddark)}
 #briefing,#science,#complete{position:absolute;inset:0;background:rgba(40,34,20,.55);display:none;z-index:5}
 #briefing.show,#science.show,#complete.show{display:flex;align-items:center;justify-content:center}
-#briefing .card,#science .card,#complete .card,#debrief .card,.overlay .card{max-width:520px;margin:12px;background:#fffef5;border:3px solid var(--sanddark);
+#briefing .card,#science .card,#complete .card,.overlay-fixed .card,.overlay .card{max-width:520px;margin:12px;background:#fffef5;border:3px solid var(--sanddark);
   border-radius:6px;padding:18px 20px;font-size:13.5px;line-height:1.6}
 .bt{font-family:var(--pixel);font-size:11px;color:var(--sanddark);margin-bottom:10px}
 #briefing ol{margin:8px 0 14px 18px}
@@ -71,9 +74,15 @@ canvas{width:100%;image-rendering:pixelated;display:block;border:2px solid var(-
 .ref{font-family:var(--pixel);font-size:9px;color:#fff;background:var(--neg);display:inline-block;padding:3px 8px;border-radius:3px;margin:4px 0}
 .frow{font-size:11px;color:var(--soft);margin:3px 0}
 .frow b{color:var(--neg)}
+.fix{font-size:11px;color:var(--pos);margin:1px 0 7px;font-weight:600}
+.sug{font-family:var(--pixel);font-size:7px;color:var(--accent);margin:2px 0 6px}
+.route{margin:0 0 6px}
+.route .rt{font-family:var(--pixel);font-size:7px;padding:4px 6px;margin:0 4px 0 0;background:#fffef5;color:var(--faint);border:2px solid var(--rule2);border-radius:3px;cursor:pointer}
+.route .rt.on{border-color:var(--sanddark);color:var(--sanddark);background:#f3efdd}
+#fleet-btn{font-family:var(--pixel);font-size:10px;padding:10px 14px;background:var(--sanddark);color:#fffef5;border:none;border-radius:4px;cursor:pointer}
 .prog-btn{font-family:var(--mono);font-size:10px;background:none;border:1px solid var(--rule2);border-radius:3px;padding:3px 7px;cursor:pointer;color:var(--soft);margin-top:4px}
 .prog{font-family:var(--mono);font-size:10.5px;background:#262114;color:#e8dfc8;padding:8px 10px;border-radius:4px;margin-top:6px;overflow-x:auto}
-#desk-btn{font-family:var(--pixel);font-size:10px;padding:10px 14px;background:var(--sanddark);color:#fffef5;border:none;border-radius:4px;cursor:pointer;margin-right:8px}
+#desk-btn,#crash-retry{font-family:var(--pixel);font-size:10px;padding:10px 14px;background:var(--sanddark);color:#fffef5;border:none;border-radius:4px;cursor:pointer;margin-right:8px}
 .dtable{width:100%;border-collapse:collapse;font-size:12.5px;margin:8px 0}
 .dtable th{font-family:var(--pixel);font-size:8px;text-align:right;padding:4px;color:var(--faint)}
 .dtable td{padding:4px;border-bottom:1px solid var(--rule);text-align:right}
@@ -111,10 +120,36 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
         <span id="objectives">▢ GIRAFFES &nbsp;▢ ZEBRAS &nbsp;▢ HOME SAFE</span>
         <span id="h-clock" style="display:none">09:00</span>
         <button id="science-btn">📄 THE SCIENCE</button>
+        <button id="restart-btn" title="restart the shift">↺ RESTART</button>
       </div>
       <canvas id="game"></canvas>
       <div id="opsy"></div>
-      <div id="tut-arrow">👇</div>
+      <div id="tut-arrow"><div class="tut-shaft"></div><div class="tut-head"></div></div>
+      <div id="fleet" class="overlay-fixed">
+        <div class="card" style="max-width:540px">
+          <div class="bt">YOUR FLEET — THREE AIRCRAFT, THREE JOBS</div>
+          <p><b>MAVIC 3E · endurance.</b> The workhorse with the longest battery — 43-minute
+          flights in the real fleet. First pick for long routes and big surveys.</p>
+          <p><b>MAVIC 2T · thermal.</b> The only aircraft with a thermal camera; when the rangers
+          call, they mean this one. Shorter battery.</p>
+          <p><b>MINI 4 PRO · speed.</b> The sprinter — 34 minutes, 249 grams in the real fleet.
+          Fastest across the conservancy, perfect courier; drains quickest.</p>
+          <p>Assign an aircraft to a request and the <b>pre-flight gate</b> decides. When it
+          refuses, the card names the rule that fired <b>and the fix</b>. Nothing flies on charm.</p>
+          <p style="font-size:11px;color:var(--faint)">Aircraft and specs mirror the real Ol Pejeta
+          campaign fleet (Maalouf et al., ICUAS 2025). And like the real campaign: we fly west of
+          the river.</p>
+          <button id="fleet-btn">▶ OPEN THE DESK (09:00)</button>
+        </div>
+      </div>
+      <div id="crashed" class="overlay-fixed">
+        <div class="card" style="max-width:440px">
+          <div class="bt">AIRCRAFT LOST</div>
+          <p>The battery ran out before the drone made it home. Recovery team dispatched;
+          the accountant has been notified. It happens to every coordinator once.</p>
+          <button id="crash-retry">↺ TRY AGAIN</button>
+        </div>
+      </div>
       <div id="debrief" class="overlay-fixed">
         <div class="card" style="max-width:560px">
           <div class="bt">SHIFT DEBRIEF — 17:00</div>
@@ -163,7 +198,6 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
           <p>The clipboard is yours now, coordinator. <b>Level 2: the operations desk.</b> Three
           aircraft, a queue of requests, and a pre-flight gate that only speaks in rules.</p>
           <button id="desk-btn">▶ TAKE THE DESK (09:00)</button>
-          <button class="close-btn" style="background:#fffef5;color:var(--sanddark);border:2px solid var(--sanddark)">keep flying</button>
         </div>
       </div>
     </div>
