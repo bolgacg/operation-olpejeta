@@ -147,3 +147,11 @@ same planner the gate uses, run continuously; this is stated on screen.
   and ENGLISH-OR-SILENT policy — never again a Danish voice reading English.
 - Removed: pre-flight gateCheck, corridor/direct toggle, straight route ribbon.
   Kept for the bot only: corridor length math in botScore.
+
+## VOICE (22 Aug, round 4)
+- speechSynthesis REMOVED entirely. OPSY now speaks 35 pregenerated neural lines
+  (edge-tts en-US-GuyNeural +4%, tools/make_vo.py -> assets/vo/*.mp3, 1.5MB total),
+  preloaded via fetch+decodeAudioData, played through a WebAudio radio bandpass
+  (250Hz-3.6kHz). Templated in-game lines speak a generic variant; exact numbers stay
+  in the text bubble. Preloaded-or-silent: no browser voice roulette ever again.
+- Regenerate/change voice: edit VOICE in tools/make_vo.py and rerun.

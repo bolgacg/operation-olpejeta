@@ -44,41 +44,50 @@ function primeSound(){
   try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u);}catch(e){}
   const b=$('#sound-btn'); if(b) b.style.display='none';
 }
-$('#sound-btn').addEventListener('click',()=>{primeSound(); opsy(lastOpsy||'Sound on. I have been talking this whole time, you know.');});
+$('#sound-btn').addEventListener('click',()=>{primeSound(); if(lastOpsy)opsy(lastOpsy,true,lastVo); else opsy('Sound on. I have been talking this whole time, you know.',true,'sound_on');});
 
 /* ---------- OPSY ---------- */
-let VOICE=null;
-function pickVoice(){
+/* OPSY speaks from pregenerated neural voice lines (assets/vo, see tools/make_vo.py).
+   Played through a light radio bandpass. No speechSynthesis — preloaded or silent. */
+const VOKEYS=['tut_start','tut_takeoff','tut_photo','tut_landed','science_prompt','zebra_done',
+ 'rhino_bonus','spooked','batt25','l1_down','l1_flawless','l1_complete_disturbed','sound_on',
+ 'desk_intro','draw_line','stop_locked','end_on_objective','end_on_pad','refuse_energy',
+ 'certified','certified_warn','new_request','ranger_priority','tower_logged','cleared',
+ 'wind_on','wind_off','sector_fine','dual_drone','buffer_hit','l2_down','no_thermal',
+ 'illuminated','bot_won','matched_machine'];
+const VO={}; let voChain=null, voNow=null;
+function voGraph(){
+  if(voChain) return voChain;
+  const hp=AC.createBiquadFilter();hp.type='highpass';hp.frequency.value=250;
+  const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=3600;
+  const g=AC.createGain();g.gain.value=1.15;
+  hp.connect(lp);lp.connect(g);g.connect(AC.destination);
+  voChain=hp; return hp;
+}
+function sayVO(key){
+  const b=VO[key]; if(!b||!SOUND) return;
   try{
-    const vs=speechSynthesis.getVoices(); if(!vs.length) return false;
-    VOICE=vs.find(v=>/Samantha/i.test(v.name))
-        ||vs.find(v=>/Google (US|UK) English/i.test(v.name))
-        ||vs.find(v=>/^en[-_]US/i.test(v.lang)&&/natural|neural|online/i.test(v.name))
-        ||vs.find(v=>/^en[-_]US/i.test(v.lang))
-        ||vs.find(v=>/^en[-_]GB/i.test(v.lang))
-        ||vs.find(v=>/^en/i.test(v.lang))||null;
-    return true;
-  }catch(e){return true;}
+    if(voNow){try{voNow.stop();}catch(e){}}
+    const s=AC.createBufferSource(); s.buffer=b; s.connect(voGraph()); s.start(); voNow=s;
+  }catch(e){}
 }
-if('speechSynthesis' in window){
-  pickVoice(); speechSynthesis.onvoiceschanged=pickVoice;
-  let vtries=0; const vp=setInterval(()=>{ if((pickVoice()&&VOICE)||++vtries>20) clearInterval(vp); },250);
-}
+(function loadVO(){
+  if(location.protocol==='file:') return; // dev preview: text only
+  let n=0;
+  VOKEYS.forEach(k=>fetch('assets/vo/'+k+'.mp3')
+    .then(r=>r.ok?r.arrayBuffer():null)
+    .then(ab=>ab&&AC.decodeAudioData(ab))
+    .then(b=>{if(b){VO[k]=b;if(++n===VOKEYS.length)console.log('VO loaded '+n);}})
+    .catch(()=>{}));
+})();
 const opsyEl=$('#opsy');
-let opsyTimer=null, lastOpsy='';
-function opsy(text,speak=true){
-  lastOpsy=text;
+let opsyTimer=null, lastOpsy='', lastVo=null;
+function opsy(text,speak=true,vo=null){
+  lastOpsy=text; lastVo=vo;
   opsyEl.textContent='OPSY: '+text;
   opsyEl.classList.add('show');
   clearTimeout(opsyTimer); opsyTimer=setTimeout(()=>opsyEl.classList.remove('show'),6500);
-  // English voice or silence — a Danish voice reading English is worse than text
-  if(speak&&SOUND&&VOICE&&'speechSynthesis' in window){
-    try{speechSynthesis.cancel();
-      const u=new SpeechSynthesisUtterance(text);
-      u.voice=VOICE; u.lang=VOICE.lang||'en-US';
-      u.rate=1.04;u.pitch=1.0;u.volume=.9;
-      speechSynthesis.speak(u);}catch(e){}
-  }
+  if(speak&&SOUND&&vo) sayVO(vo);
 }
 
 /* ---------- paper cards ---------- */
@@ -150,7 +159,7 @@ function checkComplete(){
     $('#complete-lines').innerHTML='Shift score <b>'+Math.max(0,score)+'</b> · photos '+photos+' · animals disturbed '+disturbs+
       (disturbs===0?' — a perfect conservation record.':' — the herds request quieter mornings.');
     $('#complete').classList.add('show');
-    opsy(disturbs===0?'Flawless morning, coordinator. Not one animal looked up. I am telling the professor.':'Assignment complete. Next time we try it without frightening the locals.');
+    opsy(disturbs===0?'Flawless morning, coordinator. Not one animal looked up. I am telling the professor.':'Assignment complete. Next time we try it without frightening the locals.',true,disturbs===0?'l1_flawless':'l1_complete_disturbed');
   }
 }
 
@@ -203,13 +212,13 @@ addEventListener('pointerup',()=>{
         const t=a.m.target;
         if(Math.hypot(end.x-t.x,end.y-t.y)<=a.m.radius){
           a.out=pts; a.stop={x:end.x,y:end.y}; a.leg='home'; snd.radio();
-          opsy('Objective locked — that is the stop. Now draw the way home: start at the stop, end on any pad.');
+          opsy('Objective locked — that is the stop. Now draw the way home: start at the stop, end on any pad.',true,'stop_locked');
           renderDeck();
-        } else opsy('End the outbound line on the objective, then release.');
+        } else opsy('End the outbound line on the objective, then release.',true,'end_on_objective');
       } else {
         const np=nearestPad(end.x,end.y);
         if(np.dist<24){ pts.push({x:np.pad.x,y:np.pad.y}); a.home=pts; launchRoute(); }
-        else opsy('End the return line on one of the three pads.');
+        else opsy('End the return line on one of the three pads.',true,'end_on_pad');
       }
     }
   }
@@ -227,10 +236,10 @@ function arrowOff(){arrowEl.classList.remove('show');}
 const tut={
   step:0,
   steps:[
-    {key:'start',go(){opsy('Good morning, coordinator! Drag a line from your drone to fly it.');arrowAt(camp.x,camp.y-8);}},
-    {key:'takeoff',go(){opsy('Airborne! Fly into the GREEN ring around the giraffes and hold steady. The camera fires itself. Never cross the RED circle.');arrowAt(herds[0].x,herds[0].y-14);}},
-    {key:'photo',go(){opsy('Beautiful shot! Now the zebras, then bring it home before the battery runs out.');arrowAt(herds[1].x,herds[1].y-14);}},
-    {key:'landed',go(){opsy('Textbook landing. Fly, observe, disturb nothing, come home. That is the whole job.');arrowOff();}},
+    {key:'start',go(){opsy('Good morning, coordinator! Drag a line from your drone to fly it.',true,'tut_start');arrowAt(camp.x,camp.y-8);}},
+    {key:'takeoff',go(){opsy('Airborne! Fly into the GREEN ring around the giraffes and hold steady. The camera fires itself. Never cross the RED circle.',true,'tut_takeoff');arrowAt(herds[0].x,herds[0].y-14);}},
+    {key:'photo',go(){opsy('Beautiful shot! Now the zebras, then bring it home before the battery runs out.',true,'tut_photo');arrowAt(herds[1].x,herds[1].y-14);}},
+    {key:'landed',go(){opsy('Textbook landing. Fly, observe, disturb nothing, come home. That is the whole job.',true,'tut_landed');arrowOff();}},
   ],
   next(key){const s=this.steps[this.step];if(s&&s.key===key&&this.steps[this.step+1]){this.step++;this.steps[this.step].go();}},
   fire(key){for(let i=this.step;i<this.steps.length;i++){if(this.steps[i].key===key){this.step=i;this.steps[i].go();return;}}}
@@ -325,7 +334,7 @@ function renderDeck(){
   }));
   box.querySelectorAll('button[data-clr]').forEach(b=>b.addEventListener('click',()=>{
     clearance={state:'pending',t:18}; snd.radio();
-    opsy('Tower called. Clearance request logged; they answer on their own schedule, like all towers since the dawn of aviation.');
+    opsy('Tower called. Clearance request logged; they answer on their own schedule, like all towers since the dawn of aviation.',true,'tower_logged');
     renderDeck();
   }));
 }
@@ -336,7 +345,7 @@ function arm(mid,did){
   if(armed&&armed.m!==m) armed.m.arm=null;
   armed={m,d,leg:'out',out:null,stop:null,home:null,pts:[]};
   m.arm=armed;
-  opsy('Drawing '+m.id+' with the '+d.name+': drag a line from the aircraft to the objective and release there. Then draw the way home to any pad.');
+  opsy('Drawing '+m.id+' with the '+d.name+': drag a line from the aircraft to the objective and release there. Then draw the way home to any pad.',true,'draw_line');
   renderDeck();
 }
 function pathLen(pts,from){let L=0,p=from;for(const q of pts){L+=Math.hypot(q.x-p.x,q.y-p.y);p=q;}return L;}
@@ -372,7 +381,7 @@ function launchRoute(){
     const g=$('#gate-'+m.id);
     if(g) g.innerHTML='<div class="ref">REFUSED — ENERGY</div><div class="frow"><b>ENERGY RESERVE</b> This line needs ~'+need.toFixed(0)+'% of a full battery'+(wind.on?' (headwind arithmetic)':'')+'; the aircraft has '+d.batt.toFixed(0)+'% and must land with 20% to spare (Seewald et al. 2022).</div><div class="fix">→ Fix: draw a shorter line, pick a longer-legged aircraft, or let the battery climb on the pad.</div>';
     paperCard('energy'); if(!PAPERS.gate.shown) paperCard('gate');
-    opsy('Refused: not enough battery for that line. Energy is the one thing the gate will not negotiate. Draw again.');
+    opsy('Refused: not enough battery for that line. Energy is the one thing the gate will not negotiate. Draw again.',true,'refuse_energy');
     return;
   }
   const warns=warningsFor(d,m,a.out,a.home);
@@ -385,21 +394,21 @@ function launchRoute(){
   activeOps.push(op);
   armed=null;
   if(warns.length){paperCard(warns[0].card);}
-  opsy(m.id+' certified: ~'+need.toFixed(0)+'% of battery for the round trip. '+d.name+' is airborne'+(warns.length?' — with warnings on the card.':'.'));
+  opsy(m.id+' certified: ~'+need.toFixed(0)+'% of battery for the round trip. '+d.name+' is airborne'+(warns.length?' — with warnings on the card.':'.'),true,warns.length?'certified_warn':'certified');
   renderDeck();
 }
 function updateL2(dt){
   SHIFT.t+=SHIFT.rate*dt;
   $('#h-clock').textContent=clockStr();
-  if(clearance.state==='pending'){clearance.t-=dt;if(clearance.t<=0){clearance={state:'granted',t:0};snd.radio();opsy('Airband radio: cleared into the controlled sector. The real campaign coordinated with military ATC exactly this way. Fly it while it is yours.');renderDeck();}}
+  if(clearance.state==='pending'){clearance.t-=dt;if(clearance.t<=0){clearance={state:'granted',t:0};snd.radio();opsy('Airband radio: cleared into the controlled sector. The real campaign coordinated with military ATC exactly this way. Fly it while it is yours.',true,'cleared');renderDeck();}}
   // wind event at 12:00
-  if(!wind.announced&&SHIFT.t>12*3600){wind.on=true;wind.announced=true;snd.warn();opsy('Wind advisory: stiff northerly until mid-afternoon. Northern legs now cost nearly double the battery. The Kenya team mapped Route 1 for north winds and Route 2 for south; our gate just recalculates.');renderDeck();}
-  if(wind.on&&SHIFT.t>14.5*3600){wind.on=false;snd.radio();opsy('Wind advisory lifted. Northern legs are affordable again; the gate has recalculated.');renderDeck();}
+  if(!wind.announced&&SHIFT.t>12*3600){wind.on=true;wind.announced=true;snd.warn();opsy('Wind advisory: stiff northerly until mid-afternoon. Northern legs now cost nearly double the battery. The Kenya team mapped Route 1 for north winds and Route 2 for south; our gate just recalculates.',true,'wind_on');renderDeck();}
+  if(wind.on&&SHIFT.t>14.5*3600){wind.on=false;snd.radio();opsy('Wind advisory lifted. Northern legs are affordable again; the gate has recalculated.',true,'wind_off');renderDeck();}
   // deck arrivals
   for(const m of DECK){
     if(!m.spawned&&SHIFT.t>=m.at*3600){m.spawned=true;m.state='queued';deck.push(m);snd.radio();
-      if(m.type==='illuminate'){suspect={x:31*TS,y:3*TS};opsy('Priority from the rangers: possible poacher near the rhinos. Thermal aircraft, controlled airspace, no mistakes.');}
-      else opsy('New request on the desk: '+m.label+'.');
+      if(m.type==='illuminate'){suspect={x:31*TS,y:3*TS};opsy('Priority from the rangers: possible poacher near the rhinos. Thermal aircraft, controlled airspace, no mistakes.',true,'ranger_priority');}
+      else opsy('New request on the desk: '+m.label+'.',true,'new_request');
       renderDeck();}
   }
   // elephant drift
@@ -409,7 +418,7 @@ function updateL2(dt){
     const d=op.d, m=op.m;
     const windMult=(wind.on&&d.y<10*TS)?wind.mult:1;
     d.batt-=d.drainBase*dt*windMult;
-    if(d.batt<=0){d.state='down';lost++;score-=2000;snd.alarm();opsy(d.name+' is down in the bush. Recovery team dispatched. Minus two thousand.');activeOps.splice(activeOps.indexOf(op),1);m.state='failedwindow';d.op=null;renderDeck();updateHud();continue;}
+    if(d.batt<=0){d.state='down';lost++;score-=2000;snd.alarm();opsy(d.name+' is down in the bush. Recovery team dispatched. Minus two thousand.',true,'l2_down');activeOps.splice(activeOps.indexOf(op),1);m.state='failedwindow';d.op=null;renderDeck();updateHud();continue;}
     const t=d.path[0];
     if(t){
       const dx=t.x-d.x,dy=t.y-d.y,dist=Math.hypot(dx,dy);
@@ -422,8 +431,8 @@ function updateL2(dt){
       if(op.dwell>=need){
         op.phase='home'; d.path=[...op.home];
         if(m.type==='illuminate'){
-          if(!d.thermal){op.failed=true;m.state='failedwindow';snd.refuse();opsy('The aircraft reached the stop with no thermal camera. The rangers saw nothing. Window lost.');}
-          else{flash=0.3;snd.shutter();opsy('Area illuminated. Rangers moving in. The rhinos never knew we were there.');}
+          if(!d.thermal){op.failed=true;m.state='failedwindow';snd.refuse();opsy('The aircraft reached the stop with no thermal camera. The rangers saw nothing. Window lost.',true,'no_thermal');}
+          else{flash=0.3;snd.shutter();opsy('Area illuminated. Rangers moving in. The rhinos never knew we were there.',true,'illuminated');}
         }
       }
     } else if(op.phase==='home'){
@@ -438,7 +447,7 @@ function updateL2(dt){
     // live rule: uncleared entry into the controlled sector costs 500, once per flight
     if(clearance.state!=='granted'&&!op.secPaid&&d.x>=sector.x0&&d.x<=sector.x1&&d.y>=sector.y0&&d.y<=sector.y1){
       op.secPaid=true;score-=500;snd.alarm();paperCard('airspace');updateHud();
-      opsy('Tower on the radio, not pleased: uncleared aircraft in the controlled sector. Minus five hundred.');
+      opsy('Tower on the radio, not pleased: uncleared aircraft in the controlled sector. Minus five hundred.',true,'sector_fine');
     }
     // dual-drone + buffer disturbances while airborne
     for(const h of herds){
@@ -446,7 +455,7 @@ function updateL2(dt){
       const dd=Math.hypot(d.x-h.x,d.y-h.y);
       if((dd<h.buffer||(near>=2&&dd<h.photo))&&h.scattered<=0){
         h.scattered=6;disturbs++;score-=300;snd.alarm();
-        opsy(near>=2?'Two aircraft over one herd. The dual-drone finding was not a suggestion. Minus three hundred.':'Buffer violation at the '+h.kind+' herd. Minus three hundred.');
+        opsy(near>=2?'Two aircraft over one herd. The dual-drone finding was not a suggestion. Minus three hundred.':'Buffer violation at the '+h.kind+' herd. Minus three hundred.',true,near>=2?'dual_drone':'buffer_hit');
         const a=Math.atan2(h.y-d.y,h.x-d.x);h.vx=Math.cos(a)*22;h.vy=Math.sin(a)*22;updateHud();
       }
     }
@@ -490,7 +499,7 @@ function endShift(){
   $('#debrief-delta').textContent='AUTONOMY DELTA: '+(delta>=0?'+':'')+delta+'%';
   $('#debrief-note').textContent='The autonomy layer flies the same deck under the same gate. Its edge is scheduling: it wastes no time on refused plans, sequences shared airspace, and books northern legs around the gust window. Deterministic simulation, not hindsight. This is the argument for autonomous fleet management, played rather than asserted.';
   $('#debrief').classList.add('show');
-  opsy(delta>0?'The autonomy layer beat you by '+delta+' percent. Do not take it personally; it does not take coffee breaks.':'You matched the machine. I am genuinely impressed and slightly suspicious.');
+  opsy(delta>0?'The autonomy layer beat you by '+delta+' percent. Do not take it personally; it does not take coffee breaks.':'You matched the machine. I am genuinely impressed and slightly suspicious.',true,delta>0?'bot_won':'matched_machine');
 }
 
 /* ---------- start L2 ---------- */
@@ -504,7 +513,7 @@ function startL2(){
   $('#l2-panel').classList.add('show');
   $('#objectives').style.display='none';
   $('#h-clock').style.display='';
-  opsy('Nine o’clock. The desk is yours: three aircraft, three pads, a queue of requests. Pick an aircraft on a card, then draw its route by hand — out to the objective, home to any pad. The gate only argues about batteries; everything else is your judgement.');
+  opsy('Nine o’clock. The desk is yours: three aircraft, three pads, a queue of requests. Pick an aircraft on a card, then draw its route by hand — out to the objective, home to any pad. The gate only argues about batteries; everything else is your judgement.',true,'desk_intro');
   renderDeck();
 }
 
@@ -514,8 +523,8 @@ function updateL1(dt){
   for(const d of drones){
     if(d.state==='fly'){
       d.batt-=d.drainBase*dt;
-      if(d.batt<=25&&!d.warned){d.warned=true;snd.warn();opsy('Battery at twenty-five percent. Home is where the charger is!');}
-      if(d.batt<=0){d.state='down';lost++;score-=2000;snd.alarm();opsy('Drone down in the bush. That is minus two thousand. We do not talk about this at dinner.');updateHud();setTimeout(()=>$('#crashed').classList.add('show'),1100);continue;}
+      if(d.batt<=25&&!d.warned){d.warned=true;snd.warn();opsy('Battery at twenty-five percent. Home is where the charger is!',true,'batt25');}
+      if(d.batt<=0){d.state='down';lost++;score-=2000;snd.alarm();opsy('Drone down in the bush. That is minus two thousand. We do not talk about this at dinner.',true,'l1_down');updateHud();setTimeout(()=>$('#crashed').classList.add('show'),1100);continue;}
       const t=d.path[0];
       if(t){
         const dx=t.x-d.x,dy=t.y-d.y,dist=Math.hypot(dx,dy);
@@ -533,18 +542,18 @@ function updateL1(dt){
         const dist=Math.hypot(d.x-h.x,d.y-h.y);
         if(dist<h.buffer&&h.scattered<=0){
           h.scattered=6;disturbs++;score-=300;snd.alarm();
-          opsy('You spooked the '+(h.kind==='giraffe'?'giraffes':'zebras')+'! Minus three hundred. Their therapist bills us.');
+          opsy('You spooked the '+(h.kind==='giraffe'?'giraffes':'zebras')+'! Minus three hundred. Their therapist bills us.',true,'spooked');
           const a=Math.atan2(h.y-d.y,h.x-d.x);h.vx=Math.cos(a)*22;h.vy=Math.sin(a)*22;updateHud();
         } else if(dist<h.photo&&dist>=h.buffer&&h.scattered<=0&&d.state==='fly'){
           if(!PAPERS.noise.shown&&!h.shot){
             PAPERS.noise.shown=true;$('#science').classList.add('show');
-            opsy('Hold on. Before you go closer, read why that red circle is there. Real research, real zebras, this exact conservancy.');
+            opsy('Hold on. Before you go closer, read why that red circle is there. Real research, real zebras, this exact conservancy.',true,'science_prompt');
           }
           h.dwell=(h.dwell||0)+dt;
           if(h.dwell>1.1&&!h.shot){
             h.shot=true;photos++;score+=800;snd.shutter();snd.score();flash=0.25;
             if(h.kind==='giraffe'){objectives.giraffe=true;tut.fire('photo');}
-            if(h.kind==='zebra'){objectives.zebra=true;opsy('Zebra portfolio complete! The very herd from the noise study, by the way.');}
+            if(h.kind==='zebra'){objectives.zebra=true;opsy('Zebra portfolio complete! The very herd from the noise study, by the way.',true,'zebra_done');}
             objHud();updateHud();checkComplete();
           }
         } else {h.dwell=0;}
@@ -556,7 +565,7 @@ function updateL1(dt){
       if(dr<rhino.photo){
         rhino.dwell+=dt;
         if(rhino.dwell>1.1){rhino.shot=true;photos++;score+=400;snd.shutter();snd.score();flash=0.25;
-          opsy('Bonus shot: the rhinos. The rangers will want that one on the wall.');updateHud();}
+          opsy('Bonus shot: the rhinos. The rangers will want that one on the wall.',true,'rhino_bonus');updateHud();}
       } else rhino.dwell=0;
     }
   }
