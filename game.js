@@ -50,15 +50,20 @@ $('#sound-btn').addEventListener('click',()=>{primeSound(); opsy(lastOpsy||'Soun
 let VOICE=null;
 function pickVoice(){
   try{
-    const vs=speechSynthesis.getVoices(); if(!vs.length) return;
+    const vs=speechSynthesis.getVoices(); if(!vs.length) return false;
     VOICE=vs.find(v=>/Samantha/i.test(v.name))
-        ||vs.find(v=>/Google US English/i.test(v.name))
-        ||vs.find(v=>v.lang==='en-US'&&/enhanced|premium/i.test(v.name))
-        ||vs.find(v=>v.lang==='en-US')
+        ||vs.find(v=>/Google (US|UK) English/i.test(v.name))
+        ||vs.find(v=>/^en[-_]US/i.test(v.lang)&&/natural|neural|online/i.test(v.name))
+        ||vs.find(v=>/^en[-_]US/i.test(v.lang))
+        ||vs.find(v=>/^en[-_]GB/i.test(v.lang))
         ||vs.find(v=>/^en/i.test(v.lang))||null;
-  }catch(e){}
+    return true;
+  }catch(e){return true;}
 }
-if('speechSynthesis' in window){pickVoice();speechSynthesis.onvoiceschanged=pickVoice;}
+if('speechSynthesis' in window){
+  pickVoice(); speechSynthesis.onvoiceschanged=pickVoice;
+  let vtries=0; const vp=setInterval(()=>{ if((pickVoice()&&VOICE)||++vtries>20) clearInterval(vp); },250);
+}
 const opsyEl=$('#opsy');
 let opsyTimer=null, lastOpsy='';
 function opsy(text,speak=true){
@@ -66,10 +71,11 @@ function opsy(text,speak=true){
   opsyEl.textContent='OPSY: '+text;
   opsyEl.classList.add('show');
   clearTimeout(opsyTimer); opsyTimer=setTimeout(()=>opsyEl.classList.remove('show'),6500);
-  if(speak&&SOUND&&'speechSynthesis' in window){
+  // English voice or silence — a Danish voice reading English is worse than text
+  if(speak&&SOUND&&VOICE&&'speechSynthesis' in window){
     try{speechSynthesis.cancel();
       const u=new SpeechSynthesisUtterance(text);
-      u.lang='en-US'; if(VOICE)u.voice=VOICE;
+      u.voice=VOICE; u.lang=VOICE.lang||'en-US';
       u.rate=1.04;u.pitch=1.0;u.volume=.9;
       speechSynthesis.speak(u);}catch(e){}
   }
@@ -107,6 +113,8 @@ function paperCard(key){
 
 /* ---------- world ---------- */
 const camp={x:(M.camp.pad.x+0.75)*TS, y:(M.camp.pad.y+0.75)*TS};
+const pads=M.camp.pads.map(p=>({x:(p[0]+0.75)*TS,y:(p[1]+0.75)*TS}));
+function nearestPad(x,y){let b=pads[1],bd=1e9;for(const p of pads){const dd=Math.hypot(p.x-x,p.y-y);if(dd<bd){bd=dd;b=p;}}return {pad:b,dist:bd};}
 const station={x:4*TS, y:4*TS}; // research station NW
 const DRONES=[
  {id:'M3E', name:'Mavic 3E', sprite:'drone_m3e', speed:30, drainBase:100/110, thermal:false, role:'endurance'},
@@ -114,7 +122,7 @@ const DRONES=[
  {id:'MINI',name:'Mini 4 Pro',sprite:'drone_mini',speed:36, drainBase:100/70, thermal:false, role:'speed'},
 ];
 let drones=[];
-function mkDrone(t,active){ return {...t, x:camp.x,y:camp.y,path:[],batt:100,state:'home',warned:false,op:null,active}; }
+function mkDrone(t,active,i){ const p=pads[i]||pads[1]; return {...t, x:p.x,y:p.y,path:[],batt:100,state:'home',warned:false,op:null,active}; }
 
 const herds=[
  {kind:'giraffe', n:4, x:8*TS, y:5.4*TS, hx:8*TS, hy:5.4*TS, vx:0,vy:0, buffer:44, photo:70, scattered:0, mixed:false},
@@ -155,22 +163,55 @@ function evPos(e){
 }
 cvs.addEventListener('pointerdown',e=>{
   arrowOff();
-  if(!started||mode!=='L1') return;
+  if(!started) return;
   const p=evPos(e);
-  for(const d of drones){
-    if(d.active&&Math.hypot(d.x-p.x,d.y-p.y)<16){drawing=d;d.path=[];if(AC.state==='suspended')AC.resume();break;}
+  if(mode==='L1'){
+    for(const d of drones){
+      if(d.active&&Math.hypot(d.x-p.x,d.y-p.y)<16){drawing=d;d.path=[];if(AC.state==='suspended')AC.resume();break;}
+    }
+    return;
+  }
+  if(armed){
+    const a=armed;
+    const from=a.leg==='out'?{x:a.d.x,y:a.d.y}:a.stop;
+    if(from&&Math.hypot(from.x-p.x,from.y-p.y)<24){a.pts=[];drawingL2=true;if(AC.state==='suspended')AC.resume();}
   }
 });
 cvs.addEventListener('pointermove',e=>{
-  if(!drawing)return;
   const p=evPos(e);
-  const last=drawing.path[drawing.path.length-1]||drawing;
-  if(Math.hypot(p.x-last.x,p.y-last.y)>6) drawing.path.push({x:p.x,y:p.y});
+  if(drawing){
+    const last=drawing.path[drawing.path.length-1]||drawing;
+    if(Math.hypot(p.x-last.x,p.y-last.y)>6) drawing.path.push({x:p.x,y:p.y});
+  }
+  if(drawingL2&&armed){
+    const a=armed, last=a.pts[a.pts.length-1]||(a.leg==='out'?{x:a.d.x,y:a.d.y}:a.stop);
+    if(Math.hypot(p.x-last.x,p.y-last.y)>6) a.pts.push({x:p.x,y:p.y});
+  }
 });
 addEventListener('pointerup',()=>{
   if(drawing){
     if(drawing.path.length&&drawing.state==='home'){drawing.state='fly';snd.takeoff();tut.next('takeoff');}
     drawing=null;
+  }
+  if(drawingL2&&armed){
+    drawingL2=false;
+    const a=armed, pts=a.pts||[];
+    a.pts=[];
+    if(pts.length){
+      const end=pts[pts.length-1];
+      if(a.leg==='out'){
+        const t=a.m.target;
+        if(Math.hypot(end.x-t.x,end.y-t.y)<=a.m.radius){
+          a.out=pts; a.stop={x:end.x,y:end.y}; a.leg='home'; snd.radio();
+          opsy('Objective locked — that is the stop. Now draw the way home: start at the stop, end on any pad.');
+          renderDeck();
+        } else opsy('End the outbound line on the objective, then release.');
+      } else {
+        const np=nearestPad(end.x,end.y);
+        if(np.dist<24){ pts.push({x:np.pad.x,y:np.pad.y}); a.home=pts; launchRoute(); }
+        else opsy('End the return line on one of the three pads.');
+      }
+    }
   }
 });
 
@@ -196,7 +237,7 @@ const tut={
 };
 
 /* =================================================================== LEVEL 2 */
-const SHIFT={t:9*3600, end:17*3600, rate:80}; // 80 game-seconds per real second: 8h in 6 min
+const SHIFT={t:9*3600, end:17*3600, rate:96}; // 96 game-seconds per real second: 8h in 5 min
 function clockStr(){const h=Math.floor(SHIFT.t/3600),m=Math.floor((SHIFT.t%3600)/60);return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');}
 const sector=M.sector;
 
@@ -241,31 +282,6 @@ function segCircle(x1,y1,x2,y2,cx,cy,r){
   let t=((cx-x1)*dx+(cy-y1)*dy)/L2; t=Math.max(0,Math.min(1,t));
   return Math.hypot(x1+t*dx-cx, y1+t*dy-cy)<r;
 }
-function gateCheck(d,m){
-  const fails=[];
-  // 1. energy (Seewald et al.)
-  const dwell=m.type==='track'?20:(m.type==='illuminate'?6:(m.type==='survey'?8:4));
-  const windMult=(wind.on&&m.target.y<10*TS)?wind.mult:1;
-  const need=(routeLen(d,m)/d.speed*windMult+dwell)*d.drainBase;
-  if(need>d.batt-20) fails.push({rule:'ENERGY RESERVE', text:'This route needs ~'+need.toFixed(0)+'% of a full battery'+(windMult>1?' in this headwind':'')+'; the aircraft has '+d.batt.toFixed(0)+'% and must land with 20% to spare (Seewald et al. 2022).', fix:windMult>1?'wait for the wind to ease (OPSY will call it), or pick the aircraft with the longest battery.':'pick the Mavic 3E (longest battery) or let this one recharge on the pad.', card:'energy'});
-  // 2. wildlife buffers along every route leg
-  for(const h of herds){
-    if(m.target===h) continue;
-    if(legsFor(m).some(([p,q])=>segCircle(p.x,p.y,q.x,q.y,h.x,h.y,h.buffer+8)))
-      fails.push({rule:'WILDLIFE BUFFER', text:'The route cuts the '+h.kind+' herd’s noise buffer'+(h.mixed?' (mixed-species: larger by evidence)':'')+' (Afridi et al. 2026).', fix:(m.route==='direct'&&corridorAvail(m))?'switch this request to the CORRIDOR route — longer, but clear of the herds.':'wait for the herd to settle back into its grass, or fly another request first.', card:'noise'});
-  }
-  // 3. thermal requirement
-  if(m.needsThermal&&!d.thermal) fails.push({rule:'PAYLOAD', text:'Ranger support needs a thermal camera, and only one aircraft carries it.', fix:'assign the Mavic 2T.', card:null});
-  // 4. controlled airspace
-  if(crossesSector(m)&&clearance.state!=='granted')
-    fails.push({rule:'CONTROLLED AIRSPACE', text:'The target sits in the controlled sector and the tower has not cleared us.', fix:'press REQUEST CLEARANCE and give the tower a moment; they answer on their own clock.', card:'airspace', clearance:true});
-  // 5. deconfliction
-  for(const op of activeOps){
-    if(legsFor(m).some(([p,q])=>segCircle(p.x,p.y,q.x,q.y,op.m.target.x,op.m.target.y,56)))
-      fails.push({rule:'AIRSPACE CONFLICT', text:'The corridor intersects active '+op.m.id+'. One volume, one aircraft (U-space planning, 2024).', fix:'wait for that aircraft to land, or fly a request in a different part of the sky.', card:'uspace'});
-  }
-  return fails;
-}
 function progFor(d,m){
   const lines=['mission '+m.id.toLowerCase()+' {',
    '  aircraft '+d.id+';',
@@ -286,22 +302,26 @@ function renderDeck(){
     if(m.state==='queued'){
       const sug=DRONES.find(x=>x.id===m.best);
       inner+='<div class="sug">OPSY suggests: '+m.best+' — '+sug.role+'</div>';
-      if(corridorAvail(m)) inner+='<div class="route"><button class="rt'+(m.route!=='direct'?' on':'')+'" data-rt="corridor" data-m="'+m.id+'">CORRIDOR · clear of herds</button><button class="rt'+(m.route==='direct'?' on':'')+'" data-rt="direct" data-m="'+m.id+'">DIRECT · shorter, riskier</button></div>';
-      inner+='<div class="assign">'+drones.filter(d=>d.active&&d.state==='home'&&!d.op).map(d=>
-        '<button data-m="'+m.id+'" data-d="'+d.id+'">'+d.id+' · '+d.role+' · '+Math.round(d.batt)+'%</button>').join('')+
-        (crossesSector(m)&&clearance.state==='none'?'<button class="clr" data-clr="1">REQUEST CLEARANCE</button>':'')+
-        (clearance.state==='pending'&&crossesSector(m)?'<span class="pend">tower… '+Math.ceil(clearance.t)+'s</span>':'')+
-        '</div><div class="gate" id="gate-'+m.id+'"></div>';
+      if(m.arm){
+        inner+='<div class="pend">DRAWING · '+m.arm.d.id+' — '+(m.arm.leg==='out'?'drag from the aircraft to the objective, release there':'now draw home to any pad')+'</div><div class="assign"><button data-cancel="'+m.id+'">CANCEL</button></div>';
+      } else {
+        inner+='<div class="assign">'+drones.filter(d=>d.active&&d.state==='home'&&!d.op).map(d=>
+          '<button data-m="'+m.id+'" data-d="'+d.id+'">'+d.id+' · '+d.role+' · <span class="bpct" data-d="'+d.id+'">'+Math.round(d.batt)+'%</span></button>').join('')+
+          (crossesSector(m)&&clearance.state==='none'?'<button class="clr" data-clr="1">REQUEST CLEARANCE</button>':'')+
+          (clearance.state==='pending'&&crossesSector(m)?'<span class="pend">tower… '+Math.ceil(clearance.t)+'s</span>':'')+
+          '</div>';
+      }
+      inner+='<div class="gate" id="gate-'+m.id+'"></div>';
     }
-    if(m.state==='active') inner+='<div class="pend">airborne · '+m.op.d.id+'</div>';
+    if(m.state==='active') inner+='<div class="pend">airborne · '+m.op.d.id+'</div>'+((m.warns&&m.warns.length)?m.warns.map(f=>'<div class="frow warn"><b>'+f.rule+'</b> '+f.text+'</div>').join(''):'');
     if(m.state==='done') inner+='<div class="okd">complete +'+m.pts+'</div>';
     if(m.state==='failedwindow') inner+='<div class="okd" style="color:#B03A3A">window missed</div>';
     div.innerHTML=inner;
     box.appendChild(div);
   }
-  box.querySelectorAll('button[data-d]').forEach(b=>b.addEventListener('click',()=>assign(b.dataset.m,b.dataset.d)));
-  box.querySelectorAll('button[data-rt]').forEach(b=>b.addEventListener('click',()=>{
-    const m=deck.find(x=>x.id===b.dataset.m); if(m){m.route=b.dataset.rt; renderDeck();}
+  box.querySelectorAll('button[data-d]').forEach(b=>b.addEventListener('click',()=>arm(b.dataset.m,b.dataset.d)));
+  box.querySelectorAll('button[data-cancel]').forEach(b=>b.addEventListener('click',()=>{
+    const m=deck.find(x=>x.id===b.dataset.cancel); if(m){m.arm=null;} armed=null; renderDeck();
   }));
   box.querySelectorAll('button[data-clr]').forEach(b=>b.addEventListener('click',()=>{
     clearance={state:'pending',t:18}; snd.radio();
@@ -309,28 +329,64 @@ function renderDeck(){
     renderDeck();
   }));
 }
-function assign(mid,did){
+let armed=null, drawingL2=false; // {m,d,leg,out,stop,home,pts}
+function arm(mid,did){
   const m=deck.find(x=>x.id===mid), d=drones.find(x=>x.id===did);
   if(!m||!d) return;
-  const fails=gateCheck(d,m);
-  const g=$('#gate-'+m.id);
-  if(fails.length){
-    refusals++; snd.refuse();
-    g.innerHTML='<div class="ref">REFUSED</div>'+fails.map(f=>'<div class="frow"><b>'+f.rule+'</b> '+f.text+'</div>'+(f.fix?'<div class="fix">→ Fix: '+f.fix+'</div>':'')).join('')+
-      '<button class="prog-btn">view plan as program</button>';
-    g.querySelector('.prog-btn').addEventListener('click',()=>{ g.innerHTML+='<pre class="prog">'+progFor(d,m)+'</pre>'; });
-    paperCard(fails[0].card); if(!PAPERS.gate.shown) paperCard('gate');
-    opsy('Refused: '+fails[0].rule.toLowerCase()+'. The fix is on the card. The gate never argues taste, only rules.');
-  } else {
-    snd.certify(); snd.takeoff();
-    m.state='active';
-    const op={m, d, phase:'out', dwell:0};
-    m.op=op; d.op=op; d.state='fly';
-    d.path=[...corridorFor(m),{x:m.target.x,y:m.target.y}];
-    activeOps.push(op);
-    opsy(m.id+' certified. '+d.name+' is airborne.');
-    renderDeck();
+  if(armed&&armed.m!==m) armed.m.arm=null;
+  armed={m,d,leg:'out',out:null,stop:null,home:null,pts:[]};
+  m.arm=armed;
+  opsy('Drawing '+m.id+' with the '+d.name+': drag a line from the aircraft to the objective and release there. Then draw the way home to any pad.');
+  renderDeck();
+}
+function pathLen(pts,from){let L=0,p=from;for(const q of pts){L+=Math.hypot(q.x-p.x,q.y-p.y);p=q;}return L;}
+function dwellFor(m){return m.type==='track'?20:(m.type==='illuminate'?6:(m.type==='survey'?8:4));}
+function routeNeeds(d,m,out,home){
+  const north=out.concat(home).some(p=>p.y<10*TS);
+  const windMult=(wind.on&&north)?wind.mult:1;
+  const len=pathLen(out,d)+pathLen(home,out[out.length-1]);
+  return (len/d.speed*windMult+dwellFor(m))*d.drainBase;
+}
+function warningsFor(d,m,out,home){
+  const w=[]; const all=[{x:d.x,y:d.y},...out,...home];
+  for(const h of herds){
+    if(m.target===h) continue;
+    let hit=false;
+    for(let i=0;i<all.length-1;i++) if(segCircle(all[i].x,all[i].y,all[i+1].x,all[i+1].y,h.x,h.y,h.buffer+6)){hit=true;break;}
+    if(hit) w.push({rule:'WILDLIFE BUFFER', text:'This line brushes the '+h.kind+' herd’s noise buffer'+(h.mixed?' (mixed-species: larger by evidence)':'')+' — expect a disturbance, minus 300 (Afridi et al. 2026).', card:'noise'});
   }
+  if(clearance.state!=='granted'&&all.some(p=>p.x>=sector.x0&&p.x<=sector.x1&&p.y>=sector.y0&&p.y<=sector.y1))
+    w.push({rule:'CONTROLLED AIRSPACE', text:'This line enters the controlled sector without clearance — the tower fines 500 (Maalouf et al. 2025).', card:'airspace'});
+  if(m.needsThermal&&!d.thermal)
+    w.push({rule:'PAYLOAD', text:'No thermal camera on this aircraft — the rangers will see nothing at the stop and the mission will fail.', card:null});
+  return w;
+}
+function launchRoute(){
+  const a=armed; if(!a||!a.out||!a.home) return;
+  const m=a.m, d=a.d;
+  const need=routeNeeds(d,m,a.out,a.home);
+  if(need>d.batt-20){
+    refusals++; snd.refuse();
+    a.leg='out'; a.out=null; a.home=null; a.stop=null;
+    renderDeck();
+    const g=$('#gate-'+m.id);
+    if(g) g.innerHTML='<div class="ref">REFUSED — ENERGY</div><div class="frow"><b>ENERGY RESERVE</b> This line needs ~'+need.toFixed(0)+'% of a full battery'+(wind.on?' (headwind arithmetic)':'')+'; the aircraft has '+d.batt.toFixed(0)+'% and must land with 20% to spare (Seewald et al. 2022).</div><div class="fix">→ Fix: draw a shorter line, pick a longer-legged aircraft, or let the battery climb on the pad.</div>';
+    paperCard('energy'); if(!PAPERS.gate.shown) paperCard('gate');
+    opsy('Refused: not enough battery for that line. Energy is the one thing the gate will not negotiate. Draw again.');
+    return;
+  }
+  const warns=warningsFor(d,m,a.out,a.home);
+  m.warns=warns;
+  snd.certify(); snd.takeoff();
+  m.state='active'; m.arm=null;
+  const op={m,d,phase:'out',dwell:0,home:a.home,stop:a.stop};
+  m.op=op; d.op=op; d.state='fly';
+  d.path=[...a.out];
+  activeOps.push(op);
+  armed=null;
+  if(warns.length){paperCard(warns[0].card);}
+  opsy(m.id+' certified: ~'+need.toFixed(0)+'% of battery for the round trip. '+d.name+' is airborne'+(warns.length?' — with warnings on the card.':'.'));
+  renderDeck();
 }
 function updateL2(dt){
   SHIFT.t+=SHIFT.rate*dt;
@@ -361,20 +417,28 @@ function updateL2(dt){
       if(dist<step){d.path.shift();}else{d.x+=dx/dist*step;d.y+=dy/dist*step;}
     } else if(op.phase==='out'){
       op.dwell+=dt;
-      const need=m.type==='track'?20:(m.type==='illuminate'?6:(m.type==='survey'?8:4));
+      const need=dwellFor(m);
       if(m.type==='track'&&Math.hypot(d.x-m.target.x,d.y-m.target.y)>m.radius){d.path=[{x:m.target.x,y:m.target.y}];}
       if(op.dwell>=need){
-        op.phase='home'; d.path=[...corridorFor(m).slice().reverse(),{x:camp.x,y:camp.y}];
-        if(m.type==='illuminate'){flash=0.3;snd.shutter();opsy('Area illuminated. Rangers moving in. The rhinos never knew we were there.');}
+        op.phase='home'; d.path=[...op.home];
+        if(m.type==='illuminate'){
+          if(!d.thermal){op.failed=true;m.state='failedwindow';snd.refuse();opsy('The aircraft reached the stop with no thermal camera. The rangers saw nothing. Window lost.');}
+          else{flash=0.3;snd.shutter();opsy('Area illuminated. Rangers moving in. The rhinos never knew we were there.');}
+        }
       }
     } else if(op.phase==='home'){
-      if(Math.hypot(d.x-camp.x,d.y-camp.y)<14){
-        d.state='home';d.op=null;snd.land();snd.score();
-        m.state='done';completedOps++;score+=m.pts;
+      if(!d.path.length&&nearestPad(d.x,d.y).dist<24){
+        d.state='home';d.op=null;snd.land();
         activeOps.splice(activeOps.indexOf(op),1);
+        if(!op.failed){snd.score();m.state='done';completedOps++;score+=m.pts;}
         updateHud();renderDeck();
-        if(deck.every(x=>x.state==='done')&&DECK.every(x=>x.spawned)) endShift();
+        if(deck.every(x=>x.state==='done'||x.state==='failedwindow')&&DECK.every(x=>x.spawned)) endShift();
       }
+    }
+    // live rule: uncleared entry into the controlled sector costs 500, once per flight
+    if(clearance.state!=='granted'&&!op.secPaid&&d.x>=sector.x0&&d.x<=sector.x1&&d.y>=sector.y0&&d.y<=sector.y1){
+      op.secPaid=true;score-=500;snd.alarm();paperCard('airspace');updateHud();
+      opsy('Tower on the radio, not pleased: uncleared aircraft in the controlled sector. Minus five hundred.');
     }
     // dual-drone + buffer disturbances while airborne
     for(const h of herds){
@@ -389,6 +453,7 @@ function updateL2(dt){
   }
   // recharge docked
   for(const d of drones){ if(d.state==='home'&&d.batt<100){d.batt=Math.min(100,d.batt+6*dt);} }
+  document.querySelectorAll('.bpct').forEach(s=>{const d=drones.find(x=>x.id===s.dataset.d);if(d)s.textContent=Math.round(d.batt)+'%';});
   if(SHIFT.t>=SHIFT.end) endShift();
 }
 
@@ -434,12 +499,12 @@ function startL2(){
   mode='L2';
   l2Base=score;
   arrowOff();
-  drones=[mkDrone(DRONES[0],true), mkDrone(DRONES[1],true), mkDrone(DRONES[2],true)];
+  drones=[mkDrone(DRONES[0],true,0), mkDrone(DRONES[1],true,1), mkDrone(DRONES[2],true,2)];
   $('#complete').classList.remove('show');
   $('#l2-panel').classList.add('show');
   $('#objectives').style.display='none';
   $('#h-clock').style.display='';
-  opsy('Nine o’clock. The desk is yours: three aircraft, a queue of requests, and a gate that only speaks in rules. Certify wisely.');
+  opsy('Nine o’clock. The desk is yours: three aircraft, three pads, a queue of requests. Pick an aircraft on a card, then draw its route by hand — out to the objective, home to any pad. The gate only argues about batteries; everything else is your judgement.');
   renderDeck();
 }
 
@@ -457,7 +522,7 @@ function updateL1(dt){
         const step=d.speed*dt;
         if(dist<step){d.path.shift();}else{d.x+=dx/dist*step;d.y+=dy/dist*step;}
       }
-      if(!d.path.length&&Math.hypot(d.x-camp.x,d.y-camp.y)<14){
+      if(!d.path.length&&nearestPad(d.x,d.y).dist<14){
         d.state='home';snd.land();d.warned=false;
         score+=Math.round(d.batt*2);updateHud();
         if(d.batt>=20&&photos>0){objectives.home=true;objHud();checkComplete();}
@@ -523,7 +588,7 @@ function render(){
     ctx.font='7px monospace';ctx.fillStyle='rgba(74,63,38,0.9)';
     ctx.fillText(clearance.state==='granted'?'SECTOR: CLEARED':'CONTROLLED AIRSPACE',sector.x0+6,sector.y1-5);
   }
-  spr('pad',camp.x,camp.y);
+  for(const p of pads) spr('pad',p.x,p.y);
   for(const [x,y] of M.camp.tents)spr('tent',(x+0.5)*TS,(y+0.5)*TS);
   if(mode==='L2'){spr('tent',station.x,station.y);ctx.font='7px monospace';ctx.fillStyle='rgba(74,63,38,0.9)';ctx.fillText('RESEARCH',station.x-16,station.y+14);}
   ctx.font='7px monospace';ctx.fillStyle='rgba(40,70,95,0.9)';ctx.fillText('EWASO',36*TS+2,11.8*TS);
@@ -559,14 +624,15 @@ function render(){
     }
   }
   // op corridors (L2)
-  if(mode==='L2'){
-    for(const op of activeOps){
-      ctx.strokeStyle='rgba(44,74,107,0.35)';ctx.lineWidth=10;ctx.lineCap='round';ctx.lineJoin='round';
-      ctx.beginPath();ctx.moveTo(camp.x,camp.y);
-      for(const p of corridorFor(op.m))ctx.lineTo(p.x,p.y);
-      ctx.lineTo(op.m.target.x,op.m.target.y);ctx.stroke();
-      ctx.lineWidth=1;
-    }
+  if(mode==='L2'&&armed){
+    const a=armed;
+    ctx.strokeStyle='rgba(44,74,107,0.55)';ctx.setLineDash([3,3]);ctx.lineWidth=2;ctx.lineJoin='round';
+    const segs=[];
+    if(a.out) segs.push([{x:a.d.x,y:a.d.y},...a.out]);
+    if(a.pts&&a.pts.length) segs.push([(a.leg==='out'?{x:a.d.x,y:a.d.y}:a.stop),...a.pts]);
+    for(const s of segs){ctx.beginPath();ctx.moveTo(s[0].x,s[0].y);for(const p of s)ctx.lineTo(p.x,p.y);ctx.stroke();}
+    ctx.setLineDash([]);ctx.lineWidth=1;
+    if(a.stop){ctx.strokeStyle='#F2A93B';ctx.lineWidth=2;ctx.beginPath();ctx.arc(a.stop.x,a.stop.y,7,0,7);ctx.stroke();ctx.lineWidth=1;}
   }
   for(const d of drones){
     if(d.path.length){
@@ -606,7 +672,8 @@ function updateHud(){
 let last=performance.now();
 function loop(now){
   const dt=Math.max(0,Math.min(0.05,(now-last)/1000));last=now;
-  if(started&&!shiftEnded){
+  const paused=!!document.querySelector('.overlay.show,.overlay-fixed.show,#briefing.show,#science.show,#complete.show');
+  if(started&&!shiftEnded&&!paused){
     if(mode==='L1')updateL1(dt); else updateL2(dt);
     updateShared(dt);
   }
@@ -615,7 +682,7 @@ function loop(now){
 }
 
 /* ---------- boot ---------- */
-drones=[mkDrone(DRONES[2],true)];   // L1: the Mini only
+drones=[mkDrone(DRONES[2],true,1)];   // L1: the Mini only, middle pad
 updateHud();objHud();
 $('#briefing').classList.add('show');
 $('#begin-btn').addEventListener('click',()=>{
@@ -637,9 +704,13 @@ try{const q=new URLSearchParams(location.search);
   if(q.get('l2')){started=true;$('#briefing').classList.remove('show');startL2();SOUND=false;}
   if(q.get('t')){SHIFT.t=parseFloat(q.get('t'))*3600;}
   const simTry=(id,fn)=>{const iv=setInterval(()=>{if(deck.find(x=>x.id===id)){clearInterval(iv);fn();}},250);};
-  if(q.get('sim')==='refuse'){simTry('OP-05',()=>assign('OP-05','M3E'));}
-  if(q.get('sim')==='fly'){simTry('OP-01',()=>{clearance={state:'granted',t:0};assign('OP-01','M3E');});}
-  if(q.get('sim')==='direct'){simTry('OP-01',()=>{clearance={state:'granted',t:0};deck.find(x=>x.id==='OP-01').route='direct';assign('OP-01','M3E');});}
+  const inj=(mid,did,out,home)=>{arm(mid,did);armed.out=out;armed.stop=out[out.length-1];armed.leg='home';armed.home=home;launchRoute();};
+  if(q.get('sim')==='fly'){simTry('OP-01',()=>{clearance={state:'granted',t:0};
+    inj('OP-01','M3E',[{x:176,y:112},{x:480,y:96},{x:536,y:64}],[{x:480,y:96},{x:176,y:112},{x:pads[0].x,y:pads[0].y}]);});}
+  if(q.get('sim')==='refuse'){simTry('OP-01',()=>{
+    inj('OP-01','MINI',[{x:600,y:300},{x:60,y:280},{x:600,y:200},{x:60,y:150},{x:536,y:64}],[{x:60,y:150},{x:600,y:200},{x:pads[2].x,y:pads[2].y}]);});}
+  if(q.get('sim')==='warn'){simTry('OP-01',()=>{
+    inj('OP-01','M3E',[{x:400,y:150},{x:536,y:64}],[{x:400,y:150},{x:pads[1].x,y:pads[1].y}]);});}
   if(q.get('sim')==='debrief'){setTimeout(()=>{completedOps=4;score=3400;disturbs=1;endShift();},900);}
   if(q.get('sim')==='tut'){started=true;$('#briefing').classList.remove('show');setTimeout(()=>tut.steps[0].go(),600);}
   if(q.get('sim')==='fleet'){started=true;$('#briefing').classList.remove('show');$('#fleet').classList.add('show');}

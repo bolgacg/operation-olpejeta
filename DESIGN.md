@@ -131,3 +131,19 @@ same planner the gate uses, run continuously; this is stated on screen.
   Ewaso river on map + west-of-river rule, PAPERS.airspace card with DIRECT QUOTE (tourist aircraft /
   two airstrips / military airport), airband+military ATC in clearance grant, Route 1/Route 2 in wind
   advisory, rth_failsafe in program view. NO NE camp claim in the paper — river rule used instead.
+
+## BUILD STATUS 3 (22 Aug afternoon — Bo's round-3 redesign)
+- L2 INTERACTION PIVOT (Bo's call): no more auto-routes/corridor toggle. Pick an aircraft on the
+  card, then HAND-DRAW the route: drag aircraft→objective, release there (that point = the STOP
+  where the work happens), then draw stop→any pad. THREE pads, non-exclusive landing.
+- Gate philosophy: ENERGY is the only hard block (Seewald cite, shows exact % needed vs held).
+  Everything else is judgement + live consequence, with pre-flight WARNINGS (amber, cite papers):
+  buffer brush = expect −300; uncleared sector entry = live −500 fine (airspace paper card pops);
+  wrong payload on the ranger mission = mission fails at the stop. Risk and skill are back —
+  L1's training now matters in L2, per Bo's critique.
+- Shift is 5 real minutes (rate 96). Game time PAUSES while any pop-up is open.
+- Batteries recharge visibly: live % ticks up on the assign buttons (.bpct spans).
+- Voice: broad English-voice search incl. Brave/Windows voices, polls until voices load,
+  and ENGLISH-OR-SILENT policy — never again a Danish voice reading English.
+- Removed: pre-flight gateCheck, corridor/direct toggle, straight route ribbon.
+  Kept for the bot only: corridor length math in botScore.
