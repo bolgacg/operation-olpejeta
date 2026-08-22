@@ -526,7 +526,7 @@ function render(){
   spr('pad',camp.x,camp.y);
   for(const [x,y] of M.camp.tents)spr('tent',(x+0.5)*TS,(y+0.5)*TS);
   if(mode==='L2'){spr('tent',station.x,station.y);ctx.font='7px monospace';ctx.fillStyle='rgba(74,63,38,0.9)';ctx.fillText('RESEARCH',station.x-16,station.y+14);}
-  ctx.font='7px monospace';ctx.fillStyle='rgba(90,130,160,0.9)';ctx.fillText('EWASO',35.4*TS,11.5*TS);
+  ctx.font='7px monospace';ctx.fillStyle='rgba(40,70,95,0.9)';ctx.fillText('EWASO',36*TS+2,11.8*TS);
   for(const [x,y,k] of M.deco)spr(k,(x+0.5)*TS,(y+0.5)*TS);
   spr('rhino',rhino.x,rhino.y);
   if(mode==='L1'&&!rhino.shot){
