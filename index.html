@@ -98,9 +98,11 @@ canvas{width:100%;image-rendering:pixelated;display:block;border:2px solid var(-
 .pnav{flex:0 0 42px;display:flex;align-items:center;justify-content:center;font-family:var(--pixel);font-size:14px;
   background:#fffef5;border:2px solid var(--sanddark);border-radius:4px;color:var(--sanddark);cursor:pointer;user-select:none}
 .pnav:hover{background:var(--sand)}
-.pstage{flex:1;display:grid;grid-template-columns:minmax(200px,300px) 1fr;gap:22px;background:var(--card);
+.pstage{flex:1;display:grid;background:var(--card);
   border:1px solid var(--rule2);border-radius:6px;padding:18px 20px;min-width:0}
-.pstage img{width:100%;border:1px solid var(--rule2);box-shadow:0 2px 10px rgba(26,29,33,.14);display:block}
+.pslide{grid-area:1/1;display:grid;grid-template-columns:minmax(200px,300px) 1fr;gap:22px;min-width:0;visibility:hidden}
+.pslide.on{visibility:visible}
+.pslide img{width:100%;border:1px solid var(--rule2);box-shadow:0 2px 10px rgba(26,29,33,.14);display:block}
 .ptitle{font-family:var(--serif);font-size:20px;line-height:1.35;font-weight:600}
 .pvenue{font-family:var(--mono);font-size:11.5px;color:var(--faint);margin:8px 0 4px;line-height:1.6}
 .ptag{font-family:var(--pixel);font-size:8px;color:var(--amber);margin:8px 0 2px}
@@ -118,8 +120,10 @@ canvas{width:100%;image-rendering:pixelated;display:block;border:2px solid var(-
 .astage img{width:100%;max-width:540px;border:1px solid var(--rule2);box-shadow:0 6px 18px rgba(26,29,33,.18);
   transform:rotate(-1deg);transition:transform .2s;display:inline-block}
 .astage img.tilt{transform:rotate(1.1deg)}
-.acap{font-family:var(--mono);font-size:12.5px;color:var(--soft);margin:14px auto 0;line-height:1.6;max-width:520px}
-@media(max-width:720px){.papers{flex-wrap:wrap}.pstage{grid-template-columns:1fr;order:1;flex-basis:100%}.pnav{flex:1;order:2;padding:10px 0}
+.acaps{display:grid;margin-top:14px}
+.acap{grid-area:1/1;font-family:var(--mono);font-size:12.5px;color:var(--soft);margin:0 auto;line-height:1.6;max-width:520px;visibility:hidden}
+.acap.on{visibility:visible}
+@media(max-width:720px){.papers{flex-wrap:wrap}.pstage{order:1;flex-basis:100%}.pslide{grid-template-columns:1fr}.pnav{flex:1;order:2;padding:10px 0}
   .album{flex-wrap:wrap}.astage{order:1;flex-basis:100%}.album .pnav{flex:1;order:2;padding:10px 0}}
 footer{border-top:1px solid var(--rule);margin-top:40px;padding:20px 0 40px;font-family:var(--mono);font-size:12px;color:var(--faint)}
 footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
@@ -262,15 +266,7 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
     real ones.</p>
     <div class="papers">
       <button class="pnav" id="p-prev" aria-label="previous paper">◀</button>
-      <div class="pstage">
-        <div><img id="p-img" alt="first page of the paper"><a class="plink" id="p-link" href="#" target="_blank" rel="noopener">read the paper ↗</a></div>
-        <div>
-          <div class="ptitle" id="p-title"></div>
-          <div class="pvenue" id="p-venue"></div>
-          <div class="ptag">WHAT THE GAME TAKES FROM IT</div>
-          <ul class="prules" id="p-rules"></ul>
-        </div>
-      </div>
+      <div class="pstage" id="p-stage"></div>
       <button class="pnav" id="p-next" aria-label="next paper">▶</button>
     </div>
     <div class="pdots" id="p-dots"></div>
@@ -312,18 +308,24 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
      '<b>CHECKLIST DISCIPLINE.</b> In the Kenya campaign, iterating pre-flight checklists cut preparation from 26 minutes to 13 (WildProcedures); the gate is that discipline, automated.']},
   ];
   var i=0;
-  var img=document.getElementById('p-img'), title=document.getElementById('p-title'),
-      venue=document.getElementById('p-venue'), rules=document.getElementById('p-rules'),
-      link=document.getElementById('p-link'), dots=document.getElementById('p-dots');
-  DECK.forEach(function(_,k){
+  var stage=document.getElementById('p-stage'), dots=document.getElementById('p-dots');
+  DECK.forEach(function(p,k){
     var s=document.createElement('span');
     s.addEventListener('click',function(){i=k;show();});
     dots.appendChild(s);
+    var slide=document.createElement('div');
+    slide.className='pslide';
+    slide.innerHTML='<div><img src="'+p.img+'" alt="first page of the paper">'+
+      '<a class="plink" href="'+p.link+'" target="_blank" rel="noopener">read the paper ↗</a></div>'+
+      '<div><div class="ptitle"></div><div class="pvenue"></div>'+
+      '<div class="ptag">WHAT THE GAME TAKES FROM IT</div>'+
+      '<ul class="prules">'+p.rules.map(function(r){return '<li>'+r+'</li>';}).join('')+'</ul></div>';
+    slide.querySelector('.ptitle').textContent=p.title;
+    slide.querySelector('.pvenue').textContent=p.venue;
+    stage.appendChild(slide);
   });
   function show(){
-    var p=DECK[i];
-    img.src=p.img; link.href=p.link; title.textContent=p.title; venue.textContent=p.venue;
-    rules.innerHTML=p.rules.map(function(r){return '<li>'+r+'</li>';}).join('');
+    Array.prototype.forEach.call(stage.children,function(s,k){s.className=k===i?'pslide on':'pslide';});
     Array.prototype.forEach.call(dots.children,function(s,k){s.className=k===i?'on':'';});
   }
   document.getElementById('p-prev').addEventListener('click',function(){i=(i+DECK.length-1)%DECK.length;show();});
@@ -341,7 +343,7 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
       <button class="pnav" id="a-prev" aria-label="previous photo">◀</button>
       <div class="astage">
         <img id="a-img" alt="field photo">
-        <div class="acap" id="a-cap"></div>
+        <div class="acaps" id="a-caps"></div>
       </div>
       <button class="pnav" id="a-next" aria-label="next photo">▶</button>
     </div>
@@ -362,16 +364,20 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
    {img:'assets/photos/photo09.png', cap:'Last aircraft home, 18:40. The desk logged it before we heard the rotors.'},
   ];
   var i=0;
-  var img=document.getElementById('a-img'), cap=document.getElementById('a-cap'),
+  var img=document.getElementById('a-img'), caps=document.getElementById('a-caps'),
       dots=document.getElementById('a-dots');
-  ALBUM.forEach(function(_,k){
+  ALBUM.forEach(function(p,k){
     var s=document.createElement('span');
     s.addEventListener('click',function(){i=k;show();});
     dots.appendChild(s);
+    var c=document.createElement('div');
+    c.className='acap'; c.textContent=p.cap;
+    caps.appendChild(c);
   });
   function show(){
-    img.src=ALBUM[i].img; cap.textContent=ALBUM[i].cap;
+    img.src=ALBUM[i].img;
     img.className=(i%2)?'tilt':'';
+    Array.prototype.forEach.call(caps.children,function(c,k){c.className=k===i?'acap on':'acap';});
     Array.prototype.forEach.call(dots.children,function(s,k){s.className=k===i?'on':'';});
   }
   document.getElementById('a-prev').addEventListener('click',function(){i=(i+ALBUM.length-1)%ALBUM.length;show();});
