@@ -26,10 +26,10 @@ LINES = {
   "sound_on": "Sound on. I have been talking this whole time, you know.",
   # Level 2 desk
   "desk_intro": "Nine o'clock. The desk is yours: three aircraft, three pads, a queue of requests. Pick an aircraft on a card, then draw its route by hand. Out to the objective, home to any pad. The gate only argues about batteries; everything else is your judgement.",
-  "draw_line": "Drawing. Drag a line from the aircraft to the objective and release there. Then draw the way home to any pad.",
+  "draw_line": "Drawing. Drag a line from the aircraft and release inside the amber ring. Then draw the way home to any pad.",
   "stop_locked": "Objective locked. That is the stop. Now draw the way home: start at the stop, end on any pad.",
-  "end_on_objective": "End the outbound line on the objective, then release.",
-  "end_on_pad": "End the return line on one of the three pads.",
+  "end_on_objective": "End the outbound line inside the amber ring. That is the objective. Then release.",
+  "end_on_pad": "End the return line on one of the three highlighted pads.",
   "refuse_energy": "Refused: not enough battery for that line. Energy is the one thing the gate will not negotiate. Draw again.",
   "certified": "Certified. Aircraft is airborne.",
   "certified_warn": "Certified, with warnings on the card. Aircraft is airborne.",

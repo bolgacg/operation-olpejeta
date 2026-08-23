@@ -214,11 +214,11 @@ addEventListener('pointerup',()=>{
           a.out=pts; a.stop={x:end.x,y:end.y}; a.leg='home'; snd.radio();
           opsy('Objective locked — that is the stop. Now draw the way home: start at the stop, end on any pad.',true,'stop_locked');
           renderDeck();
-        } else opsy('End the outbound line on the objective, then release.',true,'end_on_objective');
+        } else opsy('End the outbound line inside the amber ring — that is the objective — then release.',true,'end_on_objective');
       } else {
         const np=nearestPad(end.x,end.y);
         if(np.dist<24){ pts.push({x:np.pad.x,y:np.pad.y}); a.home=pts; launchRoute(); }
-        else opsy('End the return line on one of the three pads.',true,'end_on_pad');
+        else opsy('End the return line on one of the three highlighted pads.',true,'end_on_pad');
       }
     }
   }
@@ -312,7 +312,7 @@ function renderDeck(){
       const sug=DRONES.find(x=>x.id===m.best);
       inner+='<div class="sug">OPSY suggests: '+m.best+' — '+sug.role+'</div>';
       if(m.arm){
-        inner+='<div class="pend">DRAWING · '+m.arm.d.id+' — '+(m.arm.leg==='out'?'drag from the aircraft to the objective, release there':'now draw home to any pad')+'</div><div class="assign"><button data-cancel="'+m.id+'">CANCEL</button></div>';
+        inner+='<div class="pend">DRAWING · '+m.arm.d.id+' — '+(m.arm.leg==='out'?'drag from the aircraft, release inside the amber ring':'now draw home to any pad')+'</div><div class="assign"><button data-cancel="'+m.id+'">CANCEL</button></div>';
       } else {
         inner+='<div class="assign">'+drones.filter(d=>d.active&&d.state==='home'&&!d.op).map(d=>
           '<button data-m="'+m.id+'" data-d="'+d.id+'">'+d.id+' · '+d.role+' · <span class="bpct" data-d="'+d.id+'">'+Math.round(d.batt)+'%</span></button>').join('')+
@@ -345,7 +345,7 @@ function arm(mid,did){
   if(armed&&armed.m!==m) armed.m.arm=null;
   armed={m,d,leg:'out',out:null,stop:null,home:null,pts:[]};
   m.arm=armed;
-  opsy('Drawing '+m.id+' with the '+d.name+': drag a line from the aircraft to the objective and release there. Then draw the way home to any pad.',true,'draw_line');
+  opsy('Drawing '+m.id+' with the '+d.name+': drag a line from the aircraft and release inside the amber objective ring. Then draw the way home to any pad.',true,'draw_line');
   renderDeck();
 }
 function pathLen(pts,from){let L=0,p=from;for(const q of pts){L+=Math.hypot(q.x-p.x,q.y-p.y);p=q;}return L;}
@@ -635,6 +635,19 @@ function render(){
   // op corridors (L2)
   if(mode==='L2'&&armed){
     const a=armed;
+    // show where to release: objective ring on the out leg, pads on the home leg
+    if(a.leg==='out'){
+      const t=a.m.target, pulse=1+Math.sin(performance.now()/300)*0.05;
+      ctx.strokeStyle='#F2A93B';ctx.setLineDash([5,4]);ctx.lineWidth=2;
+      ctx.beginPath();ctx.arc(t.x,t.y,a.m.radius*pulse,0,7);ctx.stroke();ctx.setLineDash([]);
+      ctx.font='7px monospace';ctx.fillStyle='rgba(138,90,23,0.95)';
+      ctx.fillText('RELEASE HERE',t.x-24,Math.max(8,t.y-a.m.radius-5));
+    } else {
+      for(const p of pads){
+        ctx.strokeStyle='#F2A93B';ctx.setLineDash([5,4]);ctx.lineWidth=2;
+        ctx.beginPath();ctx.arc(p.x,p.y,13,0,7);ctx.stroke();ctx.setLineDash([]);
+      }
+    }
     ctx.strokeStyle='rgba(44,74,107,0.55)';ctx.setLineDash([3,3]);ctx.lineWidth=2;ctx.lineJoin='round';
     const segs=[];
     if(a.out) segs.push([{x:a.d.x,y:a.d.y},...a.out]);
