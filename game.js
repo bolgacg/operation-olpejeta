@@ -1,4 +1,4 @@
-/* OPERATION: OL PEJETA — full engine: Level 1 (field morning) + Level 2 (operations desk). */
+/* OPERATION: OL PEJETA. Full engine: Level 1 (field morning) + Level 2 (operations desk). */
 'use strict';
 (function(){
 const TS=16;
@@ -48,7 +48,7 @@ $('#sound-btn').addEventListener('click',()=>{primeSound(); if(lastOpsy)opsy(las
 
 /* ---------- OPSY ---------- */
 /* OPSY speaks from pregenerated neural voice lines (assets/vo, see tools/make_vo.py).
-   Played through a light radio bandpass. No speechSynthesis — preloaded or silent. */
+   Played through a light radio bandpass. No speechSynthesis; preloaded or silent. */
 const VOKEYS=['tut_start','tut_takeoff','tut_photo','tut_landed','science_prompt','zebra_done',
  'rhino_bonus','spooked','batt25','l1_down','l1_flawless','l1_complete_disturbed','sound_on',
  'desk_intro','draw_line','stop_locked','end_on_objective','end_on_pad','refuse_energy',
@@ -157,7 +157,7 @@ function checkComplete(){
   if(objectives.giraffe&&objectives.zebra&&objectives.home){
     complete=true; snd.score(); snd.land();
     $('#complete-lines').innerHTML='Shift score <b>'+Math.max(0,score)+'</b> · photos '+photos+' · animals disturbed '+disturbs+
-      (disturbs===0?' — a perfect conservation record.':' — the herds request quieter mornings.');
+      (disturbs===0?'. A perfect conservation record.':'. The herds request quieter mornings.');
     $('#complete').classList.add('show');
     opsy(disturbs===0?'Flawless morning, coordinator. Not one animal looked up. I am telling the professor.':'Assignment complete. Next time we try it without frightening the locals.',true,disturbs===0?'l1_flawless':'l1_complete_disturbed');
   }
@@ -212,9 +212,9 @@ addEventListener('pointerup',()=>{
         const t=a.m.target;
         if(Math.hypot(end.x-t.x,end.y-t.y)<=a.m.radius){
           a.out=pts; a.stop={x:end.x,y:end.y}; a.leg='home'; snd.radio();
-          opsy('Objective locked — that is the stop. Now draw the way home: start at the stop, end on any pad.',true,'stop_locked');
+          opsy('Objective locked. That is the stop. Now draw the way home: start at the stop, end on any pad.',true,'stop_locked');
           renderDeck();
-        } else opsy('End the outbound line inside the amber ring — that is the objective — then release.',true,'end_on_objective');
+        } else opsy('End the outbound line inside the amber ring. That is the objective. Then release.',true,'end_on_objective');
       } else {
         const np=nearestPad(end.x,end.y);
         if(np.dist<24){ pts.push({x:np.pad.x,y:np.pad.y}); a.home=pts; launchRoute(); }
@@ -310,9 +310,9 @@ function renderDeck(){
     let inner='<div class="mid">'+m.id+' · logged '+fmtAt(m.at)+'</div><b>'+m.label+'</b><p>'+m.brief+'</p>';
     if(m.state==='queued'){
       const sug=DRONES.find(x=>x.id===m.best);
-      inner+='<div class="sug">OPSY suggests: '+m.best+' — '+sug.role+'</div>';
+      inner+='<div class="sug">OPSY suggests: '+m.best+' · '+sug.role+'</div>';
       if(m.arm){
-        inner+='<div class="pend">DRAWING · '+m.arm.d.id+' — '+(m.arm.leg==='out'?'drag from the aircraft, release inside the amber ring':'now draw home to any pad')+'</div><div class="assign"><button data-cancel="'+m.id+'">CANCEL</button></div>';
+        inner+='<div class="pend">DRAWING · '+m.arm.d.id+': '+(m.arm.leg==='out'?'drag from the aircraft, release inside the amber ring':'now draw home to any pad')+'</div><div class="assign"><button data-cancel="'+m.id+'">CANCEL</button></div>';
       } else {
         inner+='<div class="assign">'+drones.filter(d=>d.active&&d.state==='home'&&!d.op).map(d=>
           '<button data-m="'+m.id+'" data-d="'+d.id+'">'+d.id+' · '+d.role+' · <span class="bpct" data-d="'+d.id+'">'+Math.round(d.batt)+'%</span></button>').join('')+
@@ -362,12 +362,12 @@ function warningsFor(d,m,out,home){
     if(m.target===h) continue;
     let hit=false;
     for(let i=0;i<all.length-1;i++) if(segCircle(all[i].x,all[i].y,all[i+1].x,all[i+1].y,h.x,h.y,h.buffer+6)){hit=true;break;}
-    if(hit) w.push({rule:'WILDLIFE BUFFER', text:'This line brushes the '+h.kind+' herd’s noise buffer'+(h.mixed?' (mixed-species: larger by evidence)':'')+' — expect a disturbance, minus 300 (Afridi et al. 2026).', card:'noise'});
+    if(hit) w.push({rule:'WILDLIFE BUFFER', text:'This line brushes the '+h.kind+' herd’s noise buffer'+(h.mixed?' (mixed-species: larger by evidence)':'')+': expect a disturbance, minus 300 (Afridi et al. 2026).', card:'noise'});
   }
   if(clearance.state!=='granted'&&all.some(p=>p.x>=sector.x0&&p.x<=sector.x1&&p.y>=sector.y0&&p.y<=sector.y1))
-    w.push({rule:'CONTROLLED AIRSPACE', text:'This line enters the controlled sector without clearance — the tower fines 500 (Maalouf et al. 2025).', card:'airspace'});
+    w.push({rule:'CONTROLLED AIRSPACE', text:'This line enters the controlled sector without clearance; the tower fines 500 (Maalouf et al. 2025).', card:'airspace'});
   if(m.needsThermal&&!d.thermal)
-    w.push({rule:'PAYLOAD', text:'No thermal camera on this aircraft — the rangers will see nothing at the stop and the mission will fail.', card:null});
+    w.push({rule:'PAYLOAD', text:'No thermal camera on this aircraft: the rangers will see nothing at the stop and the mission will fail.', card:null});
   return w;
 }
 function launchRoute(){
@@ -379,7 +379,7 @@ function launchRoute(){
     a.leg='out'; a.out=null; a.home=null; a.stop=null;
     renderDeck();
     const g=$('#gate-'+m.id);
-    if(g) g.innerHTML='<div class="ref">REFUSED — ENERGY</div><div class="frow"><b>ENERGY RESERVE</b> This line needs ~'+need.toFixed(0)+'% of a full battery'+(wind.on?' (headwind arithmetic)':'')+'; the aircraft has '+d.batt.toFixed(0)+'% and must land with 20% to spare (Seewald et al. 2022).</div><div class="fix">→ Fix: draw a shorter line, pick a longer-legged aircraft, or let the battery climb on the pad.</div>';
+    if(g) g.innerHTML='<div class="ref">REFUSED: ENERGY</div><div class="frow"><b>ENERGY RESERVE</b> This line needs ~'+need.toFixed(0)+'% of a full battery'+(wind.on?' (headwind arithmetic)':'')+'; the aircraft has '+d.batt.toFixed(0)+'% and must land with 20% to spare (Seewald et al. 2022).</div><div class="fix">→ Fix: draw a shorter line, pick a longer-legged aircraft, or let the battery climb on the pad.</div>';
     paperCard('energy'); if(!PAPERS.gate.shown) paperCard('gate');
     opsy('Refused: not enough battery for that line. Energy is the one thing the gate will not negotiate. Draw again.',true,'refuse_energy');
     return;
@@ -394,7 +394,7 @@ function launchRoute(){
   activeOps.push(op);
   armed=null;
   if(warns.length){paperCard(warns[0].card);}
-  opsy(m.id+' certified: ~'+need.toFixed(0)+'% of battery for the round trip. '+d.name+' is airborne'+(warns.length?' — with warnings on the card.':'.'),true,warns.length?'certified_warn':'certified');
+  opsy(m.id+' certified: ~'+need.toFixed(0)+'% of battery for the round trip. '+d.name+' is airborne'+(warns.length?', with warnings on the card.':'.'),true,warns.length?'certified_warn':'certified');
   renderDeck();
 }
 function updateL2(dt){
@@ -411,8 +411,10 @@ function updateL2(dt){
       else opsy('New request on the desk: '+m.label+'.',true,'new_request');
       renderDeck();}
   }
-  // elephant drift
+  // elephant drift, clamped to his NE range so tracking never drags a drone off the map
   elephant.x+=Math.sin(SHIFT.t/900)*0.18; elephant.y+=Math.cos(SHIFT.t/1300)*0.12;
+  elephant.x=Math.max(30*TS,Math.min(35.5*TS,elephant.x));
+  elephant.y=Math.max(2.5*TS,Math.min(6.5*TS,elephant.y));
   // ops progress
   for(const op of [...activeOps]){
     const d=op.d, m=op.m;
@@ -513,7 +515,7 @@ function startL2(){
   $('#l2-panel').classList.add('show');
   $('#objectives').style.display='none';
   $('#h-clock').style.display='';
-  opsy('Nine o’clock. The desk is yours: three aircraft, three pads, a queue of requests. Pick an aircraft on a card, then draw its route by hand — out to the objective, home to any pad. The gate only argues about batteries; everything else is your judgement.',true,'desk_intro');
+  opsy('Nine o’clock. The desk is yours: three aircraft, three pads, a queue of requests. Pick an aircraft on a card, then draw its route by hand. Out to the objective, home to any pad. The gate only argues about batteries; everything else is your judgement.',true,'desk_intro');
   renderDeck();
 }
 

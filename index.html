@@ -92,6 +92,28 @@ canvas{width:100%;image-rendering:pixelated;display:block;border:2px solid var(-
 .delta{font-family:var(--pixel);font-size:13px;color:var(--accent);margin:8px 0}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(9px)}}
 .lede{color:var(--soft);max-width:800px;margin-bottom:18px}
+.sect-head{font-family:var(--pixel);font-size:12px;color:var(--sanddark);margin-bottom:8px}
+.sect-dek{font-family:var(--serif);color:var(--soft);font-size:16.5px;margin-bottom:20px;max-width:780px}
+.papers{display:flex;align-items:stretch;gap:12px}
+.pnav{flex:0 0 42px;display:flex;align-items:center;justify-content:center;font-family:var(--pixel);font-size:14px;
+  background:#fffef5;border:2px solid var(--sanddark);border-radius:4px;color:var(--sanddark);cursor:pointer;user-select:none}
+.pnav:hover{background:var(--sand)}
+.pstage{flex:1;display:grid;grid-template-columns:minmax(200px,300px) 1fr;gap:22px;background:var(--card);
+  border:1px solid var(--rule2);border-radius:6px;padding:18px 20px;min-width:0}
+.pstage img{width:100%;border:1px solid var(--rule2);box-shadow:0 2px 10px rgba(26,29,33,.14);display:block}
+.ptitle{font-family:var(--serif);font-size:20px;line-height:1.35;font-weight:600}
+.pvenue{font-family:var(--mono);font-size:11.5px;color:var(--faint);margin:8px 0 4px;line-height:1.6}
+.ptag{font-family:var(--pixel);font-size:8px;color:var(--amber);margin:8px 0 2px}
+.prules{margin:0;padding:0;list-style:none}
+.prules li{padding:8px 0 8px 22px;position:relative;border-top:1px solid var(--rule);font-size:13.5px;color:var(--ink);line-height:1.55}
+.prules li:first-child{border-top:none}
+.prules li::before{content:'▸';position:absolute;left:2px;top:10px;color:var(--amber);font-family:var(--pixel);font-size:9px}
+.prules b{color:var(--accent)}
+.plink{font-family:var(--mono);font-size:11.5px;margin-top:10px;display:inline-block;color:var(--accent)}
+.pdots{display:flex;gap:8px;justify-content:center;margin-top:14px}
+.pdots span{width:10px;height:10px;border:2px solid var(--sanddark);background:#fffef5;cursor:pointer}
+.pdots span.on{background:var(--amber)}
+@media(max-width:720px){.papers{flex-wrap:wrap}.pstage{grid-template-columns:1fr;order:1;flex-basis:100%}.pnav{flex:1;order:2;padding:10px 0}}
 footer{border-top:1px solid var(--rule);margin-top:40px;padding:20px 0 40px;font-family:var(--mono);font-size:12px;color:var(--faint)}
 footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
 .placeholder{border:1px dashed var(--rule2);border-radius:6px;padding:14px 18px;color:var(--faint);font-size:13px}
@@ -128,17 +150,17 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
       <div id="tut-arrow"><div class="tut-shaft"></div><div class="tut-head"></div></div>
       <div id="fleet" class="overlay-fixed">
         <div class="card" style="max-width:540px">
-          <div class="bt">YOUR FLEET — THREE AIRCRAFT, THREE JOBS</div>
-          <p><b>MAVIC 3E · endurance.</b> The workhorse with the longest battery — 43-minute
+          <div class="bt">YOUR FLEET · THREE AIRCRAFT, THREE JOBS</div>
+          <p><b>MAVIC 3E · endurance.</b> The workhorse with the longest battery: 43-minute
           flights in the real fleet. First pick for long routes and big surveys.</p>
           <p><b>MAVIC 2T · thermal.</b> The only aircraft with a thermal camera; when the rangers
           call, they mean this one. Shorter battery.</p>
-          <p><b>MINI 4 PRO · speed.</b> The sprinter — 34 minutes, 249 grams in the real fleet.
+          <p><b>MINI 4 PRO · speed.</b> The sprinter: 34 minutes, 249 grams in the real fleet.
           Fastest across the conservancy, perfect courier; drains quickest.</p>
           <p>Pick an aircraft on a request card, then <b>draw its route by hand</b>: drag from the
-          aircraft to the objective and release there — that is the stop where the work happens —
+          aircraft to the objective and release there (that is the stop where the work happens),
           then draw the way home to any of the three pads. The <b>pre-flight gate</b> blocks only
-          routes the battery cannot survive; everything else — herds, the tower, the payload — is
+          routes the battery cannot survive; everything else (herds, the tower, the payload) is
           your judgement, and warnings cite the science.</p>
           <p style="font-size:11px;color:var(--faint)">Aircraft and specs mirror the real Ol Pejeta
           campaign fleet (Maalouf et al., ICUAS 2025). And like the real campaign: we fly west of
@@ -156,7 +178,7 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
       </div>
       <div id="debrief" class="overlay-fixed">
         <div class="card" style="max-width:560px">
-          <div class="bt">SHIFT DEBRIEF — 17:00</div>
+          <div class="bt">SHIFT DEBRIEF · 17:00</div>
           <table id="debrief-table" class="dtable"></table>
           <div id="debrief-delta" class="delta"></div>
           <p id="debrief-note" style="font-size:12px;color:var(--soft)"></p>
@@ -190,14 +212,14 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
           mixed-species assemblages."</p>
           <p class="cite">Afridi, Laporte-Devylder, Maalouf, &hellip;, Schultz Lundquist et al.,
           "Wildlife Responses to Drone Noise: A Preliminary Approach for Quantifying Disturbance",
-          <i>Ecology and Evolution</i>, 2026. Field site: Ol Pejeta Conservancy — the same zebras
+          <i>Ecology and Evolution</i>, 2026. Field site: Ol Pejeta Conservancy, the same zebras
           you are photographing.</p>
           <button class="close-btn">GOT IT</button>
         </div>
       </div>
       <div id="complete">
         <div class="card">
-          <div class="bt">LEVEL 1 COMPLETE — 09:00</div>
+          <div class="bt">LEVEL 1 COMPLETE · 09:00</div>
           <p id="complete-lines"></p>
           <p>The clipboard is yours now, coordinator. <b>Level 2: the operations desk.</b> Three
           aircraft, a queue of requests, and a pre-flight gate that only speaks in rules.</p>
@@ -217,12 +239,93 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
 
 <section>
   <div class="wrap">
-    <div class="placeholder">Level 1 is the pilot's seat; Level 2 is the operations desk — finish the
+    <div class="placeholder">Level 1 is the pilot's seat; Level 2 is the operations desk. Finish the
     morning assignment and press ▶ TAKE THE DESK. You draw every route by hand; the gate blocks only
     what the battery cannot survive, warnings cite the study they come from, and at 17:00 your shift
     is scored against an autonomy layer flying the same deck.</div>
   </div>
 </section>
+
+<!-- FIELD ALBUM section goes here once Bo picks the photos -->
+
+<section>
+  <div class="wrap">
+    <div class="sect-head">THE PAPERS BEHIND THE RULES</div>
+    <p class="sect-dek">Nothing on the desk was invented. Every rule the gate enforces, and every
+    circle on the map, comes from published research by the SDU Drone Center and its collaborators,
+    much of it from the same Kenyan conservancy this game is set in. The first pages below are the
+    real ones.</p>
+    <div class="papers">
+      <button class="pnav" id="p-prev" aria-label="previous paper">◀</button>
+      <div class="pstage">
+        <div><img id="p-img" alt="first page of the paper"><a class="plink" id="p-link" href="#" target="_blank" rel="noopener">read the paper ↗</a></div>
+        <div>
+          <div class="ptitle" id="p-title"></div>
+          <div class="pvenue" id="p-venue"></div>
+          <div class="ptag">WHAT THE GAME TAKES FROM IT</div>
+          <ul class="prules" id="p-rules"></ul>
+        </div>
+      </div>
+      <button class="pnav" id="p-next" aria-label="next paper">▶</button>
+    </div>
+    <div class="pdots" id="p-dots"></div>
+  </div>
+</section>
+
+<script>
+(function(){
+  var DECK=[
+   {img:'assets/papers/noise-p1.png', link:'https://doi.org/10.1002/ece3.73643',
+    title:'Wildlife Responses to Drone Noise: A Preliminary Approach for Quantifying Disturbance During Single- and Dual-Drone Flights',
+    venue:'Afridi, Laporte-Devylder, Maalouf, Penny, Wahlberg, Costelloe and Schultz Lundquist et al. · Ecology and Evolution · 2026 · field site: Ol Pejeta Conservancy',
+    rules:['<b>THE RED CIRCLES.</b> At the lowest altitudes the paper records sustained vigilance and relocation, so every herd carries a noise buffer; crossing one costs 300 and scatters the animals.',
+     '<b>THE DUAL-DRONE PENALTY.</b> "Greater disturbance during dual-drone operations": two aircraft near one herd count as a disturbance even outside the buffer.',
+     '<b>MIXED-HERD BUFFERS.</b> Mixed-species assemblages showed more disturbance, so the mixed herd wears a larger circle than the single-species herds.']},
+   {img:'assets/papers/energy-p1.png', link:'https://arxiv.org/abs/2207.11056',
+    title:'Energy-Aware Planning-Scheduling for Autonomous Aerial Robots',
+    venue:'Seewald, García de Marina, Midtiby and Schultz Lundquist · IEEE/RSJ IROS · 2022',
+    rules:['<b>THE ENERGY GATE.</b> The one rule the desk will not argue about: every hand-drawn route is priced in battery percent before takeoff, and a plan that cannot come home is refused with the arithmetic shown.',
+     '<b>THE 20% RESERVE.</b> A certified plan must land with a fifth of the battery to spare; strict energy budgets are the paper\'s starting premise.',
+     '<b>WIND REPRICING.</b> When the afternoon northerly arrives, northern legs cost nearly double and the gate recalculates every plan it is offered.']},
+   {img:'assets/papers/airspace-p1.png', link:'https://doi.org/10.1109/ICUAS65942.2025.11007907',
+    title:'Insights into Safe and Scalable BVLOS UAS Operations from Kenya\'s Ol Pejeta Conservancy',
+    venue:'Maalouf, Meier, Richardson, Guerin, Watson, Schultz Lundquist, Afridi, Rolland, Jepsen, Njoroge and Jensen · ICUAS · 2025',
+    rules:['<b>THE CONTROLLED SECTOR.</b> The paper calls the site "a challenging operational setting due to its elevated airspace risk": low tourist aircraft, two internal airstrips, a military airport nearby. The north-east sector needs tower clearance, requested by radio and granted on the tower\'s schedule.',
+     '<b>THE FLEET.</b> Mavic 3E, Mavic 2T and Mini 4 Pro, with their real roles and real endurance numbers, straight from the campaign fleet.',
+     '<b>WEST OF THE EWASO.</b> The real campaign flew west of the river, and so does yours.']},
+   {img:'assets/papers/uspace-p1.png', link:'https://doi.org/10.1109/ICUAS60882.2024.10556983',
+    title:'Towards Autonomous Multi-UAV U-Space Operation Planning',
+    venue:'Grøntved, Jepsen, Christensen, Jensen, Schultz Lundquist and Campusano · ICUAS · 2024',
+    rules:['<b>ONE AIRCRAFT, ONE OPERATION.</b> Shared airspace is booked as operations: an aircraft owns one certified operation at a time and cannot be double-assigned while it flies.',
+     '<b>DRAW, CERTIFY, FLY, RELEASE.</b> The desk\'s loop is the operation-planning loop of the paper, played by hand instead of solved by the planner.',
+     '<b>WILDOPS DNA.</b> The desk itself is a playable homage to WildOps, the centre\'s multi-drone coordination tool by Guy Maalouf.']},
+   {img:'assets/papers/gate-p1.png', link:'https://portal.findresearcher.sdu.dk/en/publications/a260809b-0608-4cb7-85e2-230e0d7f851c',
+    title:'Rule-based Dynamic Safety Monitoring for Mobile Robots',
+    venue:'Adam, Larsen, Jensen and Schultz (now Schultz Lundquist) · Journal of Software Engineering for Robotics 7(1) · 2016',
+    rules:['<b>THE GATE SPEAKS IN RULES.</b> Safety concerns live outside the main program and veto unsafe behaviour at runtime; on this desk, every refusal and warning names the exact rule that fired.',
+     '<b>PLAIN-LANGUAGE REFUSALS.</b> A refusal is not a beep, it is a sentence with the rule, the numbers and a fix, in the spirit of machine-checked safety rules a human can read.',
+     '<b>CHECKLIST DISCIPLINE.</b> In the Kenya campaign, iterating pre-flight checklists cut preparation from 26 minutes to 13 (WildProcedures); the gate is that discipline, automated.']},
+  ];
+  var i=0;
+  var img=document.getElementById('p-img'), title=document.getElementById('p-title'),
+      venue=document.getElementById('p-venue'), rules=document.getElementById('p-rules'),
+      link=document.getElementById('p-link'), dots=document.getElementById('p-dots');
+  DECK.forEach(function(_,k){
+    var s=document.createElement('span');
+    s.addEventListener('click',function(){i=k;show();});
+    dots.appendChild(s);
+  });
+  function show(){
+    var p=DECK[i];
+    img.src=p.img; link.href=p.link; title.textContent=p.title; venue.textContent=p.venue;
+    rules.innerHTML=p.rules.map(function(r){return '<li>'+r+'</li>';}).join('');
+    Array.prototype.forEach.call(dots.children,function(s,k){s.className=k===i?'on':'';});
+  }
+  document.getElementById('p-prev').addEventListener('click',function(){i=(i+DECK.length-1)%DECK.length;show();});
+  document.getElementById('p-next').addEventListener('click',function(){i=(i+1)%DECK.length;show();});
+  show();
+})();
+</script>
 
 <footer>
   <div class="wrap">
