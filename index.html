@@ -113,7 +113,14 @@ canvas{width:100%;image-rendering:pixelated;display:block;border:2px solid var(-
 .pdots{display:flex;gap:8px;justify-content:center;margin-top:14px}
 .pdots span{width:10px;height:10px;border:2px solid var(--sanddark);background:#fffef5;cursor:pointer}
 .pdots span.on{background:var(--amber)}
-@media(max-width:720px){.papers{flex-wrap:wrap}.pstage{grid-template-columns:1fr;order:1;flex-basis:100%}.pnav{flex:1;order:2;padding:10px 0}}
+.album{display:flex;align-items:center;gap:12px;justify-content:center}
+.astage{flex:0 1 580px;text-align:center;min-width:0;padding:10px 0 4px}
+.astage img{width:100%;max-width:540px;border:1px solid var(--rule2);box-shadow:0 6px 18px rgba(26,29,33,.18);
+  transform:rotate(-1deg);transition:transform .2s;display:inline-block}
+.astage img.tilt{transform:rotate(1.1deg)}
+.acap{font-family:var(--mono);font-size:12.5px;color:var(--soft);margin:14px auto 0;line-height:1.6;max-width:520px}
+@media(max-width:720px){.papers{flex-wrap:wrap}.pstage{grid-template-columns:1fr;order:1;flex-basis:100%}.pnav{flex:1;order:2;padding:10px 0}
+  .album{flex-wrap:wrap}.astage{order:1;flex-basis:100%}.album .pnav{flex:1;order:2;padding:10px 0}}
 footer{border-top:1px solid var(--rule);margin-top:40px;padding:20px 0 40px;font-family:var(--mono);font-size:12px;color:var(--faint)}
 footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
 .placeholder{border:1px dashed var(--rule2);border-radius:6px;padding:14px 18px;color:var(--faint);font-size:13px}
@@ -246,8 +253,6 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
   </div>
 </section>
 
-<!-- FIELD ALBUM section goes here once Bo picks the photos -->
-
 <section>
   <div class="wrap">
     <div class="sect-head">THE PAPERS BEHIND THE RULES</div>
@@ -323,6 +328,54 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
   }
   document.getElementById('p-prev').addEventListener('click',function(){i=(i+DECK.length-1)%DECK.length;show();});
   document.getElementById('p-next').addEventListener('click',function(){i=(i+1)%DECK.length;show();});
+  show();
+})();
+</script>
+
+<section>
+  <div class="wrap">
+    <div class="sect-head">THE FIELD ALBUM</div>
+    <p class="sect-dek">Eight frames from the shared camera at the operations camp, reconstructed
+    pixel by pixel. Any resemblance to an actual field season at Ol Pejeta is aspirational.</p>
+    <div class="album">
+      <button class="pnav" id="a-prev" aria-label="previous photo">◀</button>
+      <div class="astage">
+        <img id="a-img" alt="field photo">
+        <div class="acap" id="a-cap"></div>
+      </div>
+      <button class="pnav" id="a-next" aria-label="next photo">▶</button>
+    </div>
+    <div class="pdots" id="a-dots"></div>
+  </div>
+</section>
+
+<script>
+(function(){
+  var ALBUM=[
+   {img:'assets/photos/photo01.png', cap:'Ear-notching morning. He slept through the entire procedure and most of the group photo.'},
+   {img:'assets/photos/photo02.png', cap:'New airframe day. Hand launch, zero style points, nominal telemetry.'},
+   {img:'assets/photos/photo04.png', cap:'The whole crew, morning of the first full-fleet shift. Three aircraft, three pads, unearned confidence.'},
+   {img:'assets/photos/photo05.png', cap:'Cold-chain courier run to the research station. 249 grams of drone, one blood sample, no complaints.'},
+   {img:'assets/photos/photo07.png', cap:'We wanted a team photo. She had other plans.'},
+   {img:'assets/photos/photo03.png', cap:'Twenty minutes after the thermal pass. The rangers do the rest, exactly as briefed.'},
+   {img:'assets/photos/photo10.png', cap:'Noise transects at the study herd. For the record: nobody looked up.'},
+   {img:'assets/photos/photo09.png', cap:'Last aircraft home, 18:40. The desk logged it before we heard the rotors.'},
+  ];
+  var i=0;
+  var img=document.getElementById('a-img'), cap=document.getElementById('a-cap'),
+      dots=document.getElementById('a-dots');
+  ALBUM.forEach(function(_,k){
+    var s=document.createElement('span');
+    s.addEventListener('click',function(){i=k;show();});
+    dots.appendChild(s);
+  });
+  function show(){
+    img.src=ALBUM[i].img; cap.textContent=ALBUM[i].cap;
+    img.className=(i%2)?'tilt':'';
+    Array.prototype.forEach.call(dots.children,function(s,k){s.className=k===i?'on':'';});
+  }
+  document.getElementById('a-prev').addEventListener('click',function(){i=(i+ALBUM.length-1)%ALBUM.length;show();});
+  document.getElementById('a-next').addEventListener('click',function(){i=(i+1)%ALBUM.length;show();});
   show();
 })();
 </script>
